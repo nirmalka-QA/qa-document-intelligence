@@ -1,0 +1,13 @@
+:root {
+  --mantine-font-family:
+    "JetBrains Mono",
+    monospace;
+}
+
+body {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}

@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+
+pydantic
+python-dotenv
+
+pymupdf
+python-docx
+openpyxl
+python-pptx
+
+pandas
+xlsxwriter
