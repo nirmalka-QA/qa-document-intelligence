@@ -1,4 +1,8 @@
+import type { TestCase } from "./testcase";
+import type { RTM } from "./rtm";
+
 export interface AnalysisResponse {
+  document_id: number;
   document_name: string;
   document_type: string;
   file_size: number;
@@ -10,7 +14,10 @@ export interface AnalysisResponse {
   risks: string[];
   gaps: string[];
 
-  generated_testcases: number;
+  testcases: TestCase[];
+  rtm: RTM[];
 
+  generated_testcases: number;
+  generated_rtm: number;
   extracted_text_length: number;
 }

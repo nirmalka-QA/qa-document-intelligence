@@ -1,14 +1,27 @@
+# Web framework
 fastapi
-uvicorn
+uvicorn[standard]
 python-multipart
 
+# Data validation
 pydantic
+pydantic[email]
+
+# Configuration
 python-dotenv
 
+# Rate limiting
+slowapi
+
+# Document extraction
 pymupdf
 python-docx
 openpyxl
 python-pptx
 
+# Data processing
 pandas
 xlsxwriter
+
+# Optional: MIME type validation (install system dep libmagic first)
+# python-magic  

@@ -10,319 +10,146 @@ import {
   Table,
   Text,
   Title,
+  ThemeIcon,
 } from "@mantine/core";
-
 import { useState } from "react";
-
 import { useNavigate } from "react-router-dom";
-
+import { IconTableExport, IconArrowRight, IconShieldCheck } from "@tabler/icons-react";
 import api from "../services/api";
-
-import {
-  useAnalysisStore,
-} from "../store/analysisStore";
+import { useAnalysisStore } from "../store/analysisStore";
 
 export default function RTMGenerator() {
+  const navigate = useNavigate();
+  const { analysis, testCases, rtm, setRTM } = useAnalysisStore();
+  const [loading, setLoading] = useState(false);
 
-  const navigate =
-    useNavigate();
+  const generateRTM = async () => {
+    try {
+      setLoading(true);
+      const response = await api.post("/api/rtm/generate", {
+        requirements: analysis?.requirements || [],
+        testcases: testCases || [],
+      });
+      setRTM(response.data.rtm);
+    } catch (error) {
+      console.error(error);
+      alert("Failed To Generate RTM");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const {
-    analysis,
-    testCases,
-    rtm,
-    setRTM,
-  } =
-    useAnalysisStore();
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const generateRTM =
-    async () => {
-
-      try {
-
-        setLoading(true);
-
-        const response =
-          await api.post(
-            "/api/rtm/generate",
-            {
-
-              requirements:
-                analysis?.requirements || [],
-
-              testcases:
-                testCases || [],
-            }
-          );
-
-        setRTM(
-          response.data.rtm
-        );
-
-      } catch (error) {
-
-        console.error(error);
-
-        alert(
-          "Failed To Generate RTM"
-        );
-
-      } finally {
-
-        setLoading(false);
-      }
-    };
+  const getStatusColor = (status: string) => {
+    const s = status?.toLowerCase() || "";
+    if (s.includes("covered") || s.includes("pass")) return "green";
+    if (s.includes("missing") || s.includes("uncovered")) return "red";
+    if (s.includes("partial")) return "orange";
+    return "gray";
+  };
 
   return (
-
-    <Container
-      size="xl"
-      py="md"
-    >
-
-      <Stack>
-
-        <Paper
-          p="md"
-          radius="md"
-          withBorder
-        >
-
-          <Group
-            justify="space-between"
-          >
-
-            <div>
-
-              <Title order={2}>
-                RTM Generator
-              </Title>
-
-              <Text c="dimmed">
-
-                Generate Requirement
-                Traceability Matrix
-
-              </Text>
-
-            </div>
-
-            <Badge
-              size="xl"
-              color="green"
-            >
-              {
-                analysis?.requirements
-                  ?.length || 0
-              }
-              {" "}
-              Requirements
-            </Badge>
-
+    <Container size="xl" py="xl">
+      <Stack gap="xl">
+        <Paper p="xl" radius="md" withBorder shadow="sm" bg="gray.0">
+          <Group justify="space-between">
+            <Group gap="md">
+              <ThemeIcon size={50} radius="md" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
+                <IconShieldCheck size={28} />
+              </ThemeIcon>
+              <div>
+                <Title order={2} c="dark.9">Requirement Traceability</Title>
+                <Text c="dimmed" mt={4}>
+                  Map generated test cases against core business requirements to ensure full coverage.
+                </Text>
+              </div>
+            </Group>
+            <Stack gap={4} align="flex-end">
+              <Text size="xs" tt="uppercase" fw={600} c="dimmed">Active Requirements</Text>
+              <Text size="xl" fw={800}>{analysis?.requirements?.length || 0}</Text>
+            </Stack>
           </Group>
-
         </Paper>
 
-        <Card
-          withBorder
-          shadow="sm"
-        >
-
-          <Group
-            justify="space-between"
-            mb="md"
-          >
-
-            <Text fw={700}>
-              Requirement Coverage
-            </Text>
-
+        <Card withBorder shadow="sm" radius="md" p={0}>
+          <Group justify="space-between" p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="sm">
+              <Text fw={600} size="lg">Coverage Matrix</Text>
+              {rtm.length > 0 && (
+                <Badge size="md" variant="light" color="blue">
+                  {rtm.length} Traces
+                </Badge>
+              )}
+            </Group>
             <Button
               loading={loading}
-              onClick={
-                generateRTM
-              }
+              onClick={generateRTM}
+              leftSection={<IconTableExport size={18} />}
+              radius="md"
             >
-              Generate RTM
+              Generate RTM Matrix
             </Button>
-
           </Group>
 
-          {
-
-            rtm.length > 0 && (
-
-              <Badge
-                mb="md"
-                size="lg"
-              >
-                RTM Rows:
-                {" "}
-                {rtm.length}
-              </Badge>
-
-            )
-
-          }
-
-          <ScrollArea
-            h={650}
-          >
-
-            <Table
-              striped
-              highlightOnHover
-              withTableBorder
-              stickyHeader
-            >
-
-              <Table.Thead>
-
+          <ScrollArea h={600} offsetScrollbars>
+            <Table horizontalSpacing="lg" verticalSpacing="md" highlightOnHover striped>
+              <Table.Thead bg="gray.0">
                 <Table.Tr>
-
-                  <Table.Th>
-                    Requirement ID
-                  </Table.Th>
-
-                  <Table.Th>
-                    Requirement
-                  </Table.Th>
-
-                  <Table.Th>
-                    Test Cases
-                  </Table.Th>
-
-                  <Table.Th>
-                    Coverage
-                  </Table.Th>
-
-                  <Table.Th>
-                    Status
-                  </Table.Th>
-
+                  <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Req ID</Text></Table.Th>
+                  <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Requirement Description</Text></Table.Th>
+                  <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Linked Tests</Text></Table.Th>
+                  <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Coverage Type</Text></Table.Th>
+                  <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Status</Text></Table.Th>
                 </Table.Tr>
-
               </Table.Thead>
-
               <Table.Tbody>
-
-                {
-
-                  rtm.length > 0 ?
-
-                    rtm.map(
-                      (
-                        row,
-                        index
-                      ) => (
-
-                        <Table.Tr
-                          key={index}
-                        >
-
-                          <Table.Td>
-                            {
-                              row.requirement_id
-                            }
-                          </Table.Td>
-
-                          <Table.Td>
-                            {
-                              row.requirement
-                            }
-                          </Table.Td>
-
-                          <Table.Td>
-                            {
-                              row.testcase_ids
-                            }
-                          </Table.Td>
-
-                          <Table.Td>
-                            {
-                              row.coverage
-                            }
-                          </Table.Td>
-
-                          <Table.Td>
-
-                            <Badge
-                              color="green"
-                            >
-                              {
-                                row.status
-                              }
-                            </Badge>
-
-                          </Table.Td>
-
-                        </Table.Tr>
-
-                      )
-                    )
-
-                    :
-
-                    <Table.Tr>
-
-                      <Table.Td
-                        colSpan={5}
-                      >
-
-                        <Text
-                          ta="center"
-                          c="dimmed"
-                        >
-
-                          Click Generate RTM
-                          to create
-                          Requirement
-                          Traceability Matrix
-
+                {rtm.length > 0 ? (
+                  rtm.map((row, index) => (
+                    <Table.Tr key={index}>
+                      <Table.Td fw={600} c="dark.7">{row.requirement_id}</Table.Td>
+                      <Table.Td maw={300}><Text truncate="end" size="sm" c="dimmed">{row.requirement}</Text></Table.Td>
+                      <Table.Td>
+                        <Text size="sm" fw={500} style={{ fontFamily: 'monospace' }}>
+                          {row.testcase_ids}
                         </Text>
-
                       </Table.Td>
-
+                      <Table.Td><Text size="sm">{row.coverage}</Text></Table.Td>
+                      <Table.Td>
+                        <Badge variant="dot" color={getStatusColor(row.status)} radius="sm">
+                          {row.status}
+                        </Badge>
+                      </Table.Td>
                     </Table.Tr>
-
-                }
-
+                  ))
+                ) : (
+                  <Table.Tr>
+                    <Table.Td colSpan={5} h={200}>
+                      <Stack align="center" justify="center" gap="xs">
+                        <IconTableExport size={40} color="var(--mantine-color-gray-4)" />
+                        <Text ta="center" c="dimmed" fw={500}>
+                          Matrix is empty. Click generate to map your records.
+                        </Text>
+                      </Stack>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
               </Table.Tbody>
-
             </Table>
-
           </ScrollArea>
-          {
-            rtm.length > 0 && (
-
-              <Group
-                justify="flex-end"
-                mt="md"
+          
+          {rtm.length > 0 && (
+            <Group justify="flex-end" p="md" bg="gray.0" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+              <Button
+                color="green"
+                rightSection={<IconArrowRight size={16} />}
+                onClick={() => navigate("/export-center")}
+                radius="md"
               >
-
-                <Button
-                  color="green"
-                  onClick={() =>
-                    navigate(
-                      "/export-center"
-                    )
-                  }
-                >
-                  Continue To Export →
-                </Button>
-
-              </Group>
-
-            )
-          }
-
+                Continue to Export Center
+              </Button>
+            </Group>
+          )}
         </Card>
-
       </Stack>
-
     </Container>
   );
 }

@@ -1,211 +1,129 @@
 import {
   Card,
-  Grid,
   Group,
-  Paper,
   Stack,
   Text,
   Title,
+  ThemeIcon,
+  Badge,
+  SimpleGrid,
 } from "@mantine/core";
-
+import { useAnalysisStore } from "../store/analysisStore";
 import {
-  useAnalysisStore,
-} from "../store/analysisStore";
+  IconFileAnalytics,
+  IconListCheck,
+  IconTestPipe,
+  IconTableShare,
+  IconAlertTriangle,
+  IconFileDescription,
+} from "@tabler/icons-react";
+
+// Reusable micro-component for Premium Stat Cards
+const StatCard = ({ title, value, icon: Icon, color }: any) => (
+  <Card 
+    withBorder 
+    radius="md" 
+    padding="xl" 
+    shadow="xs"
+  >
+    <Group justify="space-between" align="flex-start">
+      <Stack gap="xs">
+        <Text size="sm" c="dimmed" fw={600} tt="uppercase">
+          {title}
+        </Text>
+        <Title order={2} style={{ fontSize: "2rem", fontWeight: 700 }}>
+          {value}
+        </Title>
+      </Stack>
+      <ThemeIcon size="xl" radius="md" variant="light" color={color}>
+        <Icon size={26} stroke={1.5} />
+      </ThemeIcon>
+    </Group>
+  </Card>
+);
 
 export default function Dashboard() {
+  const { analysis, testCases, rtm } = useAnalysisStore();
 
-  const {
-    analysis,
-    testCases,
-    rtm,
-  } =
-    useAnalysisStore();
-
-  const documentCount =
-    analysis ? 1 : 0;
-
-  const requirementCount =
-    analysis?.requirements
-      ?.length || 0;
-
-  const testCaseCount =
-    testCases?.length || 0;
-
-  const rtmCount =
-    rtm?.length || 0;
-
-  const riskCount =
-    analysis?.risks
-      ?.length || 0;
+  const documentCount = analysis ? 1 : 0;
+  const requirementCount = analysis?.requirements?.length || 0;
+  const testCaseCount = testCases?.length || 0;
+  const rtmCount = rtm?.length || 0;
+  const riskCount = analysis?.risks?.length || 0;
 
   return (
+    <div style={{ width: "100%", padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
+      <Stack gap="xl">
+        
+        {/* Premium Header Section */}
+        <Group justify="space-between" align="flex-end">
+          <Stack gap="xs">
+            <Text size="sm" fw={700} c="blue" tt="uppercase" letterSpacing={1}>
+              Platform Overview
+            </Text>
+            <Title order={1} style={{ fontWeight: 800, color: "var(--mantine-color-dark-9)" }}>
+              QA Document Intelligence
+            </Title>
+            <Text c="dimmed" size="md" mt={-4}>
+              Centralized Requirement, Test Case, and RTM Management
+            </Text>
+          </Stack>
+          <Badge 
+            size="lg" 
+            variant="dot" 
+            color={analysis ? "green" : "gray"}
+            radius="md"
+          >
+            {analysis ? "Document Loaded" : "Awaiting Upload"}
+          </Badge>
+        </Group>
 
-    <div
-      style={{
-        width: "100%",
-        padding: "16px",
-      }}
-    >
+        {/* Primary Metrics */}
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
+          <StatCard title="Documents" value={documentCount} icon={IconFileAnalytics} color="blue" />
+          <StatCard title="Requirements" value={requirementCount} icon={IconListCheck} color="grape" />
+          <StatCard title="Test Cases" value={testCaseCount} icon={IconTestPipe} color="teal" />
+          <StatCard title="RTMs" value={rtmCount} icon={IconTableShare} color="orange" />
+        </SimpleGrid>
 
-      <Stack>
-
-        <Paper
-          p="md"
-          radius="md"
-          withBorder
-        >
-
-          <Title order={2}>
-            QA Document Intelligence Platform
-          </Title>
-
-          <Text c="dark">
-
-            Centralized Requirement,
-            Test Case and RTM Management
-
-          </Text>
-
-        </Paper>
-
-        <Grid>
-
-          <Grid.Col span={3}>
-
-            <Card
-              withBorder
-            >
-
-              <Text
-                size="sm"
-                c="dimmed"
-              >
-                Documents
-              </Text>
-
-              <Title order={2}>
-                {documentCount}
-              </Title>
-
-            </Card>
-
-          </Grid.Col>
-
-          <Grid.Col span={3}>
-
-            <Card
-              withBorder
-            >
-
-              <Text
-                size="sm"
-                c="dimmed"
-                 fw={500}
-              >
-                Requirements
-              </Text>
-
-              <Title order={2}>
-                {requirementCount}
-              </Title>
-
-            </Card>
-
-          </Grid.Col>
-
-          <Grid.Col span={3}>
-
-            <Card
-              withBorder
-            >
-
-              <Text
-                size="sm"
-                c="dimmed"
-                 fw={500}
-              >
-                Test Cases
-              </Text>
-
-              <Title order={2}>
-                {testCaseCount}
-              </Title>
-
-            </Card>
-
-          </Grid.Col>
-
-          <Grid.Col span={3}>
-
-            <Card
-              withBorder
-            >
-
-              <Text
-                size="sm"
-                c="dimmed"
-              >
-                RTMs
-              </Text>
-
-              <Title order={2}>
-                {rtmCount}
-              </Title>
-
-            </Card>
-
-          </Grid.Col>
-
-        </Grid>
-
-        <Grid>
-
-          <Grid.Col span={6}>
-
-            <Card
-              withBorder
-            >
-
-              <Text fw={700}>
-                Risks Identified
-              </Text>
-
-              <Title order={2}>
+        {/* Secondary Detailed Cards */}
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+          <Card withBorder radius="md" padding="xl" shadow="xs">
+            <Group justify="space-between" align="center">
+              <Stack gap="xs">
+                <Group gap="xs">
+                  <IconAlertTriangle size={22} color="var(--mantine-color-red-6)" />
+                  <Text fw={700} size="lg">Risks Identified</Text>
+                </Group>
+                <Text size="sm" c="dimmed">
+                  Potential gaps or anomalies detected in the current document.
+                </Text>
+              </Stack>
+              <Title order={1} c="red.6" style={{ fontSize: "3rem" }}>
                 {riskCount}
               </Title>
+            </Group>
+          </Card>
 
-            </Card>
-
-          </Grid.Col>
-
-          <Grid.Col span={6}>
-
-            <Card
-              withBorder
-            >
-
-              <Text fw={700}>
-                Current Document
-              </Text>
-
-              <Text>
-
-                {
-                  analysis?.document_name ||
-                  "No Document Uploaded"
-                }
-
-              </Text>
-
-            </Card>
-
-          </Grid.Col>
-
-        </Grid>
+          <Card withBorder radius="md" padding="xl" shadow="xs">
+            <Stack justify="space-between" h="100%">
+              <Stack gap="xs">
+                <Group gap="xs">
+                  <IconFileDescription size={22} color="var(--mantine-color-blue-6)" />
+                  <Text fw={700} size="lg">Current Context</Text>
+                </Group>
+                <Text size="sm" c="dimmed">Currently analyzing workspace.</Text>
+              </Stack>
+              <Card bg="gray.0" radius="sm" mt="md" p="md">
+                <Text fw={600} size="md" c={analysis?.document_name ? "dark" : "dimmed"}>
+                  {analysis?.document_name || "No Document Uploaded"}
+                </Text>
+              </Card>
+            </Stack>
+          </Card>
+        </SimpleGrid>
 
       </Stack>
-
     </div>
-
   );
 }

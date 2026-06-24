@@ -11,3 +11,24 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* src/styles/globals.css */
+
+/* This targets the root HTML tag based on the active Mantine color scheme */
+:root[data-mantine-color-scheme="light"] {
+  --app-bg: var(--mantine-color-gray-0);
+  --app-text: var(--mantine-color-dark-9);
+}
+
+:root[data-mantine-color-scheme="dark"] {
+  --app-bg: var(--mantine-color-dark-9); /* Deep dark background */
+  --app-text: var(--mantine-color-gray-3); /* Soft white text */
+}
+
+/* Apply it globally */
+body {
+  background-color: var(--app-bg) !important;
+  color: var(--app-text) !important;
+  margin: 0;
+  padding: 0;
+}

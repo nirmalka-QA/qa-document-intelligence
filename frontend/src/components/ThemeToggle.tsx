@@ -1,117 +1,34 @@
-import {
-  ActionIcon,
-  Tooltip,
-  useMantineColorScheme,
-} from "@mantine/core";
-
-import {
-  IconMoonStars,
-  IconSun,
-} from "@tabler/icons-react";
-
-import {
-  useEffect,
-} from "react";
+import { ActionIcon, Tooltip, useMantineColorScheme } from "@mantine/core";
+import { IconMoonStars, IconSun } from "@tabler/icons-react";
+import { useEffect } from "react";
 
 export default function ThemeToggle() {
-
-  const {
-    colorScheme,
-    setColorScheme,
-  } =
-    useMantineColorScheme();
-
-  const toggleTheme =
-    () => {
-
-      const nextTheme =
-        colorScheme === "dark"
-          ? "light"
-          : "dark";
-
-      setColorScheme(
-        nextTheme
-      );
-
-      localStorage.setItem(
-        "qa-theme",
-        nextTheme
-      );
-    };
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const dark = colorScheme === 'dark';
 
   useEffect(() => {
-
-    const handleKeyDown =
-      (
-        event: KeyboardEvent
-      ) => {
-
-        if (
-          event.ctrlKey &&
-          event.key.toLowerCase() === "j"
-        ) {
-
-          event.preventDefault();
-
-          toggleTheme();
-        }
-      };
-
-    window.addEventListener(
-      "keydown",
-      handleKeyDown
-    );
-
-    return () => {
-
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown
-      );
-
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key.toLowerCase() === "j") {
+        event.preventDefault();
+        toggleColorScheme();
+      }
     };
-
-  }, [
-    colorScheme
-  ]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleColorScheme]);
 
   return (
-
-    <Tooltip
-      label="Toggle Theme (Ctrl + J)"
-      withArrow
-    >
-
+    <Tooltip label={`Switch to ${dark ? 'light' : 'dark'} mode (Ctrl+J)`} withArrow>
       <ActionIcon
-        variant="light"
+        variant="default"
         radius="md"
         size="lg"
-        onClick={
-          toggleTheme
-        }
+        onClick={() => toggleColorScheme()}
+        title="Toggle color scheme"
+        style={{ transition: 'background-color 0.2s ease' }}
       >
-
-        {
-
-          colorScheme === "dark"
-
-            ? (
-              <IconSun
-                size={18}
-              />
-            )
-
-            : (
-              <IconMoonStars
-                size={18}
-              />
-            )
-
-        }
-
+        {dark ? <IconSun size={18} color="var(--mantine-color-yellow-4)" /> : <IconMoonStars size={18} color="var(--mantine-color-blue-6)" />}
       </ActionIcon>
-
     </Tooltip>
-
   );
 }

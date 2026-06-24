@@ -1,61 +1,21 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { MantineProvider } from '@mantine/core';
+import '@mantine/core/styles.css'; 
+import './styles/globals.css';
 
-import "@mantine/core/styles.css";
-import "@mantine/notifications/styles.css";
+// Import the global theme
+import { theme } from './theme/mantineTheme'; 
 
-import {
-  MantineProvider,
-  ColorSchemeScript,
-} from "@mantine/core";
+// Import your router setup (assuming you have a router file that renders <App />)
+// If your router is defined here, wrap your RouterProvider inside MantineProvider
+import { RouterProvider } from 'react-router-dom';
+import router from './router'; 
 
-import {
-  Notifications,
-} from "@mantine/notifications";
-
-import {
-  RouterProvider,
-} from "react-router-dom";
-
-import { router } from "./router";
-import { theme } from "./theme/mantineTheme";
-
-import "./index.css";
-
-const savedTheme =
-  localStorage.getItem(
-    "qa-theme"
-  ) === "dark"
-    ? "dark"
-    : "light";
-
-ReactDOM.createRoot(
-  document.getElementById("root")!
-).render(
-
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-
-    <ColorSchemeScript
-      defaultColorScheme={
-        savedTheme
-      }
-    />
-
-    <MantineProvider
-      theme={theme}
-      defaultColorScheme={
-        savedTheme
-      }
-    >
-
-      <Notifications />
-
-      <RouterProvider
-        router={router}
-      />
-
+    <MantineProvider theme={theme} defaultColorScheme="auto">
+      <RouterProvider router={router} />
     </MantineProvider>
-
   </React.StrictMode>
-
 );

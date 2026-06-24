@@ -5,613 +5,400 @@ from pathlib import Path
 class DatabaseService:
 
     def __init__(self):
+        self.db_path = Path("database") / "qa.db"
+        self.db_path.parent.mkdir(exist_ok=True)
+        self._initialize_database()
 
-        self.db_path = (
-            Path("database")
-            / "qa.db"
-        )
+    # =========================================================
+    # CONNECTION
+    # =========================================================
 
-        self.db_path.parent.mkdir(
-            exist_ok=True
-        )
-
-        self.initialize_database()
-
-    def get_connection(self):
-
-        conn = sqlite3.connect(
-            self.db_path
-        )
-
-        conn.execute(
-            "PRAGMA foreign_keys = ON"
-        )
-
+    def get_connection(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
         return conn
 
-    def initialize_database(self):
+    # =========================================================
+    # SCHEMA — CREATE IF NOT EXISTS (safe on every restart)
+    # =========================================================
 
-        # Dev migration: recreate DB schema
-        if self.db_path.exists():
-            self.db_path.unlink()
-
+    def _initialize_database(self) -> None:
         conn = self.get_connection()
         cursor = conn.cursor()
 
-        # =====================================================
-        # USERS (needed for enterprise)
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) UNIQUE NOT NULL,
-            email VARCHAR(255) UNIQUE NOT NULL,
+        cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            username    VARCHAR(255) UNIQUE NOT NULL,
+            email       VARCHAR(255) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
-            full_name VARCHAR(255),
-            role VARCHAR(50),
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            deleted_at TIMESTAMP
-        )
-        """)
+            full_name   VARCHAR(255),
+            role        VARCHAR(50),
+            is_active   BOOLEAN DEFAULT 1,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deleted_at  TIMESTAMP
+        );
 
-        # =====================================================
-        # DOCUMENTS
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE documents (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            document_name VARCHAR(255) NOT NULL,
-            document_type VARCHAR(50) NOT NULL,
-            file_path VARCHAR(500),
-            file_size INTEGER,
-            status VARCHAR(50) DEFAULT 'PENDING',
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            deleted_at TIMESTAMP,
+        CREATE TABLE IF NOT EXISTS documents (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id         INTEGER,
+            document_name   VARCHAR(255) NOT NULL,
+            document_type   VARCHAR(50)  NOT NULL,
+            file_path       VARCHAR(500),
+            file_size       INTEGER,
+            status          VARCHAR(50) DEFAULT 'PENDING',
+            is_active       BOOLEAN DEFAULT 1,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deleted_at      TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        )
-        """)
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_documents_user_id ON documents(user_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_documents_created_at ON documents(created_at)"
-        )
-
-        # =====================================================
-        # REQUIREMENTS
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE requirements (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            document_id INTEGER NOT NULL,
-            requirement_id VARCHAR(50) NOT NULL,
+        CREATE TABLE IF NOT EXISTS requirements (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id      INTEGER NOT NULL,
+            requirement_id   VARCHAR(50) NOT NULL,
             requirement_text TEXT NOT NULL,
-            category VARCHAR(100),
-            priority VARCHAR(50),
-            status VARCHAR(50),
-            confidence DECIMAL(3,2),
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            deleted_at TIMESTAMP,
-
+            category         VARCHAR(100),
+            priority         VARCHAR(50),
+            status           VARCHAR(50),
+            confidence       REAL,
+            is_active        BOOLEAN DEFAULT 1,
+            created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deleted_at       TIMESTAMP,
             UNIQUE(document_id, requirement_id),
             FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
-        )
-        """)
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_requirements_document_id ON requirements(document_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_requirements_requirement_id ON requirements(requirement_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_requirements_status ON requirements(status)"
-        )
-
-        # =====================================================
-        # TEST CASES
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE test_cases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            document_id INTEGER NOT NULL,
-            testcase_id VARCHAR(50) NOT NULL,
-            test_title VARCHAR(255) NOT NULL,
-            pre_requisites TEXT,
-            test_data TEXT,
+        CREATE TABLE IF NOT EXISTS test_cases (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id     INTEGER NOT NULL,
+            testcase_id     VARCHAR(50) NOT NULL,
+            test_title      VARCHAR(255) NOT NULL,
+            pre_requisites  TEXT,
+            test_data       TEXT,
             expected_result TEXT,
-            actual_result TEXT,
-            priority VARCHAR(50),
-            status VARCHAR(50) DEFAULT 'DRAFT',
-            overall_result VARCHAR(50),
-            comments TEXT,
-            requirement_id VARCHAR(50),
-            release_sprint VARCHAR(50),
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            deleted_at TIMESTAMP,
-            FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
-            UNIQUE(document_id, testcase_id)
-        )
-        """)
+            actual_result   TEXT,
+            priority        VARCHAR(50),
+            status          VARCHAR(50) DEFAULT 'DRAFT',
+            overall_result  VARCHAR(50),
+            comments        TEXT,
+            requirement_id  VARCHAR(50),
+            release_sprint  VARCHAR(50),
+            is_active       BOOLEAN DEFAULT 1,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deleted_at      TIMESTAMP,
+            UNIQUE(document_id, testcase_id),
+            FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_test_cases_document_id ON test_cases(document_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_test_cases_testcase_id ON test_cases(testcase_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_test_cases_status ON test_cases(status)"
-        )
-
-        # =====================================================
-        # TEST STEPS
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE test_steps (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            testcase_id INTEGER NOT NULL,
-            step_number INTEGER NOT NULL,
+        CREATE TABLE IF NOT EXISTS test_steps (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            testcase_id      INTEGER NOT NULL,
+            step_number      INTEGER NOT NULL,
             step_description TEXT NOT NULL,
-            expected_result TEXT,
-            actual_result TEXT,
-            status VARCHAR(50) DEFAULT 'NOT_EXECUTED',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
+            expected_result  TEXT,
+            actual_result    TEXT,
+            status           VARCHAR(50) DEFAULT 'NOT_EXECUTED',
+            created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(testcase_id, step_number),
             FOREIGN KEY(testcase_id) REFERENCES test_cases(id) ON DELETE CASCADE
-        )
-        """)
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_test_steps_testcase_id ON test_steps(testcase_id)"
-        )
-
-        # =====================================================
-        # RTM mapping (optional persistence)
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE rtm (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            document_id INTEGER NOT NULL,
-            requirement_id INTEGER,
-            testcase_id INTEGER,
+        CREATE TABLE IF NOT EXISTS rtm (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id     INTEGER NOT NULL,
+            requirement_id  INTEGER,
+            testcase_id     INTEGER,
             coverage_status VARCHAR(50),
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+            is_active       BOOLEAN DEFAULT 1,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(requirement_id, testcase_id),
+            FOREIGN KEY(document_id)    REFERENCES documents(id)    ON DELETE CASCADE,
             FOREIGN KEY(requirement_id) REFERENCES requirements(id) ON DELETE CASCADE,
-            FOREIGN KEY(testcase_id) REFERENCES test_cases(id) ON DELETE CASCADE,
-            UNIQUE(requirement_id, testcase_id)
-        )
-        """)
+            FOREIGN KEY(testcase_id)    REFERENCES test_cases(id)   ON DELETE CASCADE
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_rtm_document_id ON rtm(document_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_rtm_requirement_id ON rtm(requirement_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_rtm_testcase_id ON rtm(testcase_id)"
-        )
-
-        # =====================================================
-        # RISKS
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE risks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS risks (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
             document_id INTEGER NOT NULL,
-            risk_text TEXT NOT NULL,
-            severity VARCHAR(50),
-            likelihood VARCHAR(50),
-            mitigation TEXT,
-            owner_id INTEGER,
-            status VARCHAR(50),
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            deleted_at TIMESTAMP,
+            risk_text   TEXT NOT NULL,
+            severity    VARCHAR(50),
+            likelihood  VARCHAR(50),
+            mitigation  TEXT,
+            owner_id    INTEGER,
+            status      VARCHAR(50),
+            is_active   BOOLEAN DEFAULT 1,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deleted_at  TIMESTAMP,
             FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
-            FOREIGN KEY(owner_id) REFERENCES users(id)
-        )
-        """)
+            FOREIGN KEY(owner_id)    REFERENCES users(id)
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_risks_document_id ON risks(document_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_risks_severity ON risks(severity)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_risks_status ON risks(status)"
-        )
-
-        # =====================================================
-        # GAPS
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE gaps (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS gaps (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
             document_id INTEGER NOT NULL,
-            gap_text TEXT NOT NULL,
-            category VARCHAR(100),
-            priority VARCHAR(50),
+            gap_text    TEXT NOT NULL,
+            category    VARCHAR(100),
+            priority    VARCHAR(50),
             remediation TEXT,
-            owner_id INTEGER,
-            status VARCHAR(50),
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            deleted_at TIMESTAMP,
+            owner_id    INTEGER,
+            status      VARCHAR(50),
+            is_active   BOOLEAN DEFAULT 1,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deleted_at  TIMESTAMP,
             FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
-            FOREIGN KEY(owner_id) REFERENCES users(id)
-        )
-        """)
+            FOREIGN KEY(owner_id)    REFERENCES users(id)
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_gaps_document_id ON gaps(document_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_gaps_category ON gaps(category)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_gaps_status ON gaps(status)"
-        )
-
-        # =====================================================
-        # AUDIT + ACTIVITY LOGS (not used yet)
-        # =====================================================
-        cursor.execute("""
-        CREATE TABLE audit_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER,
             entity_type VARCHAR(100),
-            entity_id INTEGER,
-            action VARCHAR(50),
-            changes TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            ip_address VARCHAR(50),
-            user_agent TEXT,
+            entity_id   INTEGER,
+            action      VARCHAR(50),
+            changes     TEXT,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ip_address  VARCHAR(50),
+            user_agent  TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-        """)
+        );
 
-        cursor.execute(
-            "CREATE INDEX idx_audit_user_id ON audit_logs(user_id)"
-        )
-
-
-        cursor.execute(
-            "CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_audit_created_at ON audit_logs(created_at)"
-        )
-
-        cursor.execute("""
-        CREATE TABLE activity_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS activity_logs (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
             document_id INTEGER,
-            user_id INTEGER,
+            user_id     INTEGER,
             action_type VARCHAR(100),
-            message TEXT,
-            metadata TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            message     TEXT,
+            metadata    TEXT,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        )
+            FOREIGN KEY(user_id)     REFERENCES users(id)
+        );
         """)
 
-        cursor.execute(
-            "CREATE INDEX idx_activity_document_id ON activity_logs(document_id)"
-        )
-        cursor.execute(
-            "CREATE INDEX idx_activity_created_at ON activity_logs(created_at)"
-        )
+        # Indexes — CREATE IF NOT EXISTS equivalent via IF NOT EXISTS
+        indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_documents_user_id    ON documents(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_req_document_id      ON requirements(document_id)",
+            "CREATE INDEX IF NOT EXISTS idx_req_req_id           ON requirements(requirement_id)",
+            "CREATE INDEX IF NOT EXISTS idx_req_status           ON requirements(status)",
+            "CREATE INDEX IF NOT EXISTS idx_tc_document_id       ON test_cases(document_id)",
+            "CREATE INDEX IF NOT EXISTS idx_tc_testcase_id       ON test_cases(testcase_id)",
+            "CREATE INDEX IF NOT EXISTS idx_tc_status            ON test_cases(status)",
+            "CREATE INDEX IF NOT EXISTS idx_steps_testcase_id    ON test_steps(testcase_id)",
+            "CREATE INDEX IF NOT EXISTS idx_rtm_document_id      ON rtm(document_id)",
+            "CREATE INDEX IF NOT EXISTS idx_rtm_req_id           ON rtm(requirement_id)",
+            "CREATE INDEX IF NOT EXISTS idx_rtm_tc_id            ON rtm(testcase_id)",
+            "CREATE INDEX IF NOT EXISTS idx_risks_document_id    ON risks(document_id)",
+            "CREATE INDEX IF NOT EXISTS idx_risks_severity       ON risks(severity)",
+            "CREATE INDEX IF NOT EXISTS idx_gaps_document_id     ON gaps(document_id)",
+            "CREATE INDEX IF NOT EXISTS idx_gaps_category        ON gaps(category)",
+            "CREATE INDEX IF NOT EXISTS idx_audit_user_id        ON audit_logs(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_audit_created_at     ON audit_logs(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_activity_doc_id      ON activity_logs(document_id)",
+        ]
+        for idx in indexes:
+            cursor.execute(idx)
 
         conn.commit()
         conn.close()
+
+    # =========================================================
+    # SAVE DOCUMENT
+    # =========================================================
 
     def save_document(
         self,
-        document_name,
-        document_type,
-        file_size
-    ):
-
+        document_name: str,
+        document_type: str,
+        file_size: int,
+    ) -> int:
         conn = self.get_connection()
         cursor = conn.cursor()
-
-        # Map legacy columns -> enterprise columns
         cursor.execute(
             """
-            INSERT INTO documents
-            (
-                document_name,
-                document_type,
-                file_size,
-                status,
-                is_active
-            )
-            VALUES
-            (?, ?, ?, 'PENDING', 1)
+            INSERT INTO documents (document_name, document_type, file_size, status, is_active)
+            VALUES (?, ?, ?, 'COMPLETED', 1)
             """,
-            (
-                document_name,
-                document_type,
-                file_size,
-            )
+            (document_name, document_type, file_size),
         )
-
         conn.commit()
-        document_id = cursor.lastrowid
+        doc_id = cursor.lastrowid
         conn.close()
-        return document_id
+        return doc_id
 
-    def save_requirements(
-        self,
-        document_id,
-        requirements
-    ):
+    # =========================================================
+    # SAVE REQUIREMENTS
+    # =========================================================
 
+    def save_requirements(self, document_id: int, requirements: list) -> None:
         conn = self.get_connection()
         cursor = conn.cursor()
-
         for index, req_text in enumerate(requirements, start=1):
-            requirement_id = f"REQ-{index:03}"
-
             cursor.execute(
                 """
-                INSERT INTO requirements
-                (
-                    document_id,
-                    requirement_id,
-                    requirement_text,
-                    is_active
-                )
-                VALUES
-                (?, ?, ?, 1)
+                INSERT OR IGNORE INTO requirements
+                    (document_id, requirement_id, requirement_text, is_active)
+                VALUES (?, ?, ?, 1)
                 """,
-                (
-                    document_id,
-                    requirement_id,
-                    req_text,
-                )
+                (document_id, f"REQ-{index:03}", req_text),
             )
-
         conn.commit()
         conn.close()
 
-    def save_risks(
-        self,
-        document_id,
-        risks
-    ):
+    # =========================================================
+    # SAVE RISKS
+    # =========================================================
 
+    def save_risks(self, document_id: int, risks: list) -> None:
         conn = self.get_connection()
         cursor = conn.cursor()
-
         for risk_text in risks:
             cursor.execute(
                 """
-                INSERT INTO risks
-                (
-                    document_id,
-                    risk_text,
-                    status,
-                    is_active
-                )
-                VALUES
-                (?, ?, NULL, 1)
+                INSERT INTO risks (document_id, risk_text, is_active)
+                VALUES (?, ?, 1)
                 """,
-                (
-                    document_id,
-                    risk_text,
-                )
+                (document_id, risk_text),
             )
-
         conn.commit()
         conn.close()
 
-    def save_gaps(
-        self,
-        document_id,
-        gaps
-    ):
+    # =========================================================
+    # SAVE GAPS
+    # =========================================================
 
+    def save_gaps(self, document_id: int, gaps: list) -> None:
         conn = self.get_connection()
         cursor = conn.cursor()
-
         for gap_text in gaps:
             cursor.execute(
                 """
-                INSERT INTO gaps
-                (
-                    document_id,
-                    gap_text,
-                    status,
-                    is_active
-                )
-                VALUES
-                (?, ?, NULL, 1)
+                INSERT INTO gaps (document_id, gap_text, is_active)
+                VALUES (?, ?, 1)
                 """,
-                (
-                    document_id,
-                    gap_text,
-                )
+                (document_id, gap_text),
             )
-
         conn.commit()
         conn.close()
 
-    def save_testcases(
-        self,
-        document_id,
-        testcases
-    ):
+    # =========================================================
+    # SAVE TEST CASES
+    # =========================================================
 
+    def save_testcases(self, document_id: int, testcases: list) -> None:
         conn = self.get_connection()
         cursor = conn.cursor()
-
         for tc in testcases:
             cursor.execute(
                 """
-                INSERT INTO test_cases
-                (
-                    document_id,
-                    testcase_id,
-                    test_title,
-                    pre_requisites,
-                    test_data,
-                    expected_result,
-                    actual_result,
-                    priority,
-                    status,
-                    overall_result,
-                    comments,
-                    requirement_id,
-                    release_sprint,
-                    is_active
-                )
-                VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT', ?, ?, ?, ?, 1)
+                INSERT OR IGNORE INTO test_cases (
+                    document_id, testcase_id, test_title,
+                    pre_requisites, test_data, expected_result,
+                    actual_result, priority, status, overall_result,
+                    comments, requirement_id, release_sprint, is_active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT', ?, ?, ?, ?, 1)
                 """,
                 (
                     document_id,
-                    tc["testcase_id"],
-                    tc["test_title"],
-                    tc["pre_requisites"],
-                    tc["test_data"],
-                    tc["expected_result"],
-                    tc["actual_result"],
-                    tc["priority"],
-                    tc["overall_status"],
-                    tc["comments"],
-                    tc["requirement_id"],
-                    tc["release_sprint"],
-                )
+                    tc.get("testcase_id", ""),
+                    tc.get("test_title", ""),
+                    tc.get("pre_requisites", ""),
+                    tc.get("test_data", ""),
+                    tc.get("expected_result", ""),
+                    tc.get("actual_result", ""),
+                    tc.get("priority", "Medium"),
+                    tc.get("overall_status", "Not Executed"),
+                    tc.get("comments", ""),
+                    tc.get("requirement_id", ""),
+                    tc.get("release_sprint", ""),
+                ),
             )
-
-            test_case_db_id = cursor.lastrowid
-
-            cursor.execute(
-                """
-                INSERT INTO test_steps
-                (
-                    testcase_id,
-                    step_number,
-                    step_description,
-                    expected_result,
-                    actual_result,
-                    status
+            tc_db_id = cursor.lastrowid
+            if tc_db_id:
+                cursor.execute(
+                    """
+                    INSERT OR IGNORE INTO test_steps (
+                        testcase_id, step_number, step_description,
+                        expected_result, actual_result, status
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        tc_db_id,
+                        tc.get("test_step_number", 1),
+                        tc.get("test_steps", ""),
+                        tc.get("expected_result", ""),
+                        tc.get("actual_result", ""),
+                        tc.get("test_step_status", "Not Executed"),
+                    ),
                 )
-                VALUES
-                (?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    test_case_db_id,
-                    tc["test_step_number"],
-                    tc["test_steps"],
-                    tc["expected_result"],
-                    tc["actual_result"],
-                    tc["test_step_status"],
-                )
-            )
-
         conn.commit()
         conn.close()
+
+    # =========================================================
+    # RTM PERSISTENCE
+    # =========================================================
 
     def persist_rtm(
         self,
-        document_id,
-        rtm_rows,
-        requirements_by_id,
-        testcases_by_id
-    ):
-        """Persist RTM rows into rtm table.
-
-        requirements_by_id: mapping requirement_id(str:REQ-xxx) -> requirements.id
-        testcases_by_id: mapping testcase_id(str:TC-xxx) -> test_cases.id
-        """
-
+        document_id: int,
+        rtm_rows: list,
+        requirements_by_id: dict,
+        testcases_by_id: dict,
+    ) -> None:
         conn = self.get_connection()
         cursor = conn.cursor()
-
         for row in rtm_rows:
             req_id_str = row.get("requirement_id")
-            testcase_ids_csv = row.get("testcase_ids", "")
-
+            tc_ids_csv = row.get("testcase_ids", "")
             if not req_id_str:
                 continue
-
-            requirement_db_id = requirements_by_id.get(req_id_str)
-            if not requirement_db_id:
+            req_db_id = requirements_by_id.get(req_id_str)
+            if not req_db_id:
                 continue
-
-            testcase_ids = [t.strip() for t in testcase_ids_csv.split(",") if t.strip()]
-
-            for tc_id_str in testcase_ids:
-                test_case_db_id = testcases_by_id.get(tc_id_str)
-                if not test_case_db_id:
+            for tc_id_str in [t.strip() for t in tc_ids_csv.split(",") if t.strip()]:
+                tc_db_id = testcases_by_id.get(tc_id_str)
+                if not tc_db_id:
                     continue
-
                 cursor.execute(
                     """
-                    INSERT OR IGNORE INTO rtm
-                    (
-                        document_id,
-                        requirement_id,
-                        testcase_id,
-                        coverage_status,
-                        is_active
-                    )
-                    VALUES
-                    (?, ?, ?, ?, 1)
+                    INSERT OR IGNORE INTO rtm (
+                        document_id, requirement_id, testcase_id, coverage_status, is_active
+                    ) VALUES (?, ?, ?, ?, 1)
                     """,
-                    (
-                        document_id,
-                        requirement_db_id,
-                        test_case_db_id,
-                        row.get("coverage"),
-                    )
+                    (document_id, req_db_id, tc_db_id, row.get("coverage")),
                 )
-
         conn.commit()
         conn.close()
 
-    def get_requirements_db_ids(self, document_id):
+    def get_requirements_db_ids(self, document_id: int) -> dict:
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute(
             "SELECT requirement_id, id FROM requirements WHERE document_id = ?",
-            (document_id,)
+            (document_id,),
         )
         rows = cursor.fetchall()
         conn.close()
-        return {req_id: req_db_id for req_id, req_db_id in rows}
+        return {r[0]: r[1] for r in rows}
 
-    def get_testcases_db_ids(self, document_id):
+    def get_testcases_db_ids(self, document_id: int) -> dict:
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute(
             "SELECT testcase_id, id FROM test_cases WHERE document_id = ?",
-            (document_id,)
+            (document_id,),
         )
         rows = cursor.fetchall()
         conn.close()
-        return {tc_id: tc_db_id for tc_id, tc_db_id in rows}
-
+        return {r[0]: r[1] for r in rows}

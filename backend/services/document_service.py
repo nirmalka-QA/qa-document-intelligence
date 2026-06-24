@@ -16,219 +16,97 @@ from backend.services.database_service import DatabaseService
 class DocumentService:
 
     def __init__(self):
+        self.requirement_analyzer = RequirementAnalyzer()
+        self.risk_analyzer = RiskAnalyzer()
+        self.gap_analyzer = GapAnalyzer()
+        self.testcase_generator = TestCaseGenerator()
+        self.rtm_generator = RTMGenerator()
+        self.database_service = DatabaseService()
 
-        self.requirement_analyzer = (
-            RequirementAnalyzer()
-        )
-
-        self.risk_analyzer = (
-            RiskAnalyzer()
-        )
-
-        self.gap_analyzer = (
-            GapAnalyzer()
-        )
-
-        self.testcase_generator = (
-            TestCaseGenerator()
-        )
-
-        self.rtm_generator = (
-            RTMGenerator()
-        )
-
-        self.database_service = (
-            DatabaseService()
-        )
-
-    # =====================================================
-    # DOCUMENT ANALYSIS
-    # =====================================================
+    # =========================================================
+    # FILE UPLOAD ANALYSIS
+    # =========================================================
 
     def analyze_document(
         self,
-        file_path: str
+        file_path: str,
+        original_filename: str = "",
+        file_hash: str = "",
     ):
-
         path = Path(file_path)
+        extension = path.suffix.lower()
 
-        extension = (
-            path.suffix.lower()
-        )
+        extractors = {
+            ".pdf": PDFExtractor,
+            ".docx": DOCXExtractor,
+            ".xlsx": XLSXAnalyzer,
+            ".pptx": PPTXAnalyzer,
+        }
 
-        extracted_content = ""
+        if extension not in extractors:
+            raise ValueError(f"Unsupported file type: {extension}")
 
-        if extension == ".pdf":
+        extracted_content = extractors[extension]().extract(file_path)
 
-            extracted_content = (
-                PDFExtractor()
-                .extract(file_path)
-            )
-
-        elif extension == ".docx":
-
-            extracted_content = (
-                DOCXExtractor()
-                .extract(file_path)
-            )
-
-        elif extension == ".xlsx":
-
-            extracted_content = (
-                XLSXAnalyzer()
-                .extract(file_path)
-            )
-
-        elif extension == ".pptx":
-
-            extracted_content = (
-                PPTXAnalyzer()
-                .extract(file_path)
-            )
-
-        else:
-
-            raise Exception(
-                f"Unsupported file type: {extension}"
-            )
+        display_name = original_filename or path.name
 
         return self._process_content(
-            extracted_content,
-            path.name,
-            extension,
-            path.stat().st_size
+            content=extracted_content,
+            document_name=display_name,
+            document_type=extension,
+            file_size=path.stat().st_size,
         )
 
-    # =====================================================
-    # MANUAL TEXT ANALYSIS
-    # =====================================================
+    # =========================================================
+    # TEXT / PASTE ANALYSIS
+    # =========================================================
 
-    def analyze_text(
-        self,
-        content: str
-    ):
-
+    def analyze_text(self, content: str):
         return self._process_content(
-            content,
-            "Manual Input",
-            "TEXT",
-            len(content)
+            content=content,
+            document_name="Manual Input",
+            document_type="TEXT",
+            file_size=len(content.encode("utf-8")),
         )
 
-    # =====================================================
-    # COMMON PROCESSING ENGINE
-    # =====================================================
+    # =========================================================
+    # SHARED PROCESSING ENGINE
+    # =========================================================
 
     def _process_content(
         self,
         content: str,
         document_name: str,
         document_type: str,
-        file_size: int
+        file_size: int,
     ):
+        requirements = self.requirement_analyzer.extract_requirements(content)
+        risks = self.risk_analyzer.analyze(content)
+        gaps = self.gap_analyzer.analyze(content)
+        testcases = self.testcase_generator.generate(requirements)
+        rtm = self.rtm_generator.generate(requirements, testcases)
 
-        requirements = (
-            self.requirement_analyzer
-            .extract_requirements(
-                content
-            )
+        document_id = self.database_service.save_document(
+            document_name, document_type, file_size
         )
-
-        risks = (
-            self.risk_analyzer
-            .analyze(content)
-        )
-
-        gaps = (
-            self.gap_analyzer
-            .analyze(content)
-        )
-
-        testcases = (
-            self.testcase_generator
-            .generate(
-                requirements
-            )
-        )
-
-        rtm = (
-            self.rtm_generator
-            .generate(
-                requirements,
-                testcases
-            )
-        )
-
-        document_id = (
-            self.database_service
-            .save_document(
-                document_name,
-                document_type,
-                file_size
-            )
-        )
-
-        self.database_service.save_requirements(
-            document_id,
-            requirements
-        )
-
-        self.database_service.save_risks(
-            document_id,
-            risks
-        )
-
-        self.database_service.save_gaps(
-            document_id,
-            gaps
-        )
-
-        self.database_service.save_testcases(
-            document_id,
-            testcases
-        )
+        self.database_service.save_requirements(document_id, requirements)
+        self.database_service.save_risks(document_id, risks)
+        self.database_service.save_gaps(document_id, gaps)
+        self.database_service.save_testcases(document_id, testcases)
 
         return {
-
-            "document_id":
-                document_id,
-
-            "document_name":
-                document_name,
-
-            "document_type":
-                document_type,
-
-            "file_size":
-                file_size,
-
-            "requirements":
-                requirements,
-
-            "business_rules":
-                [],
-
-            "validations":
-                [],
-
-            "risks":
-                risks,
-
-            "gaps":
-                gaps,
-
-            "testcases":
-                testcases,
-
-            "rtm":
-                rtm,
-
-            "generated_testcases":
-                len(testcases),
-
-            "generated_rtm":
-                len(rtm),
-
-            "extracted_text_length":
-                len(content)
+            "document_id": document_id,
+            "document_name": document_name,
+            "document_type": document_type,
+            "file_size": file_size,
+            "requirements": requirements,
+            "business_rules": [],
+            "validations": [],
+            "risks": risks,
+            "gaps": gaps,
+            "testcases": testcases,
+            "rtm": rtm,
+            "generated_testcases": len(testcases),
+            "generated_rtm": len(rtm),
+            "extracted_text_length": len(content),
         }

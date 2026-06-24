@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from pydantic import BaseModel, field_validator
 
 from backend.config import settings
 from backend.api.exceptions import FileError
@@ -12,184 +12,97 @@ from backend.utils.logger import logger
 router = APIRouter()
 
 UPLOAD_FOLDER = Path(settings.UPLOAD_DIR)
-UPLOAD_FOLDER.mkdir(exist_ok=True)
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 document_service = DocumentService()
 
 
-class TextAnalysisRequest(
-    BaseModel
-):
+class TextAnalysisRequest(BaseModel):
     content: str
+
+    @field_validator("content")
+    @classmethod
+    def content_not_empty(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("Content cannot be empty")
+        if len(stripped) < 10:
+            raise ValueError("Content is too short (minimum 10 characters)")
+        return stripped
 
 
 @router.post("/upload")
-async def upload_document(
-    file: UploadFile = File(...)
-):
-
+async def upload_document(file: UploadFile = File(...)):
     if not file.filename:
-        raise FileError(
-            "No filename provided"
-        )
+        raise HTTPException(status_code=400, detail="No filename provided")
+
+    file_path: Path | None = None
 
     try:
-
         contents = await file.read()
-
         file_size = len(contents)
 
-        # Validation
+        # Early size + extension check before writing to disk
+        FileValidator.validate_size(file_size)
+        FileValidator.validate_extension(file.filename)
+        FileValidator.validate_filename(file.filename)
 
-        FileValidator.validate_extension(
-            file.filename
-        )
+        safe_filename = FileStorage.get_safe_filename(file.filename)
+        file_path = UPLOAD_FOLDER / safe_filename
 
-        FileValidator.validate_filename(
-            file.filename
-        )
+        with open(file_path, "wb") as buffer:
+            buffer.write(contents)
 
-        FileValidator.validate_size(
-            file_size
-        )
+        logger.info("File saved: %s", file_path)
 
-        # Safe filename
-
-        safe_filename = (
-            FileStorage.get_safe_filename(
-                file.filename
-            )
-        )
-
-        file_path = (
-            UPLOAD_FOLDER /
-            safe_filename
-        )
-
-        # Save file
-
-        with open(
-            file_path,
-            "wb"
-        ) as buffer:
-
-            buffer.write(
-                contents
-            )
-
-        print(
-            f"STEP 1: File Saved -> {file_path}"
-        )
-
-        # Deep validation
-
-        is_valid, error_msg = (
-            FileValidator.validate_all(
-                filename=file.filename,
-                file_size=file_size,
-                file_path=str(
-                    file_path
-                ),
-            )
+        # Deep validation after saving (signature + MIME)
+        is_valid, error_msg = FileValidator.validate_all(
+            filename=file.filename,
+            file_size=file_size,
+            file_path=str(file_path),
         )
 
         if not is_valid:
+            raise FileError(error_msg or "File validation failed")
 
-            try:
-                file_path.unlink()
-            except Exception:
-                pass
+        logger.info("Validation passed: %s", file.filename)
 
-            raise FileError(
-                error_msg
-            )
+        file_hash = FileStorage.get_file_hash(str(file_path))
 
-        print(
-            "STEP 2: Validation Passed"
+        result = document_service.analyze_document(
+            file_path=str(file_path),
+            original_filename=file.filename,
+            file_hash=file_hash,
         )
 
-        # File hash
-
-        file_hash = (
-            FileStorage.get_file_hash(
-                str(file_path)
-            )
-        )
-
-        print(
-            "STEP 3: Calling Document Service"
-        )
-
-        result = (
-            document_service
-            .analyze_document(
-                file_path=str(
-                    file_path
-                ),
-                original_filename=file.filename,
-                file_hash=file_hash,
-            )
-        )
-
-        print(
-            "STEP 4: Analysis Complete"
-        )
-
+        logger.info("Analysis complete for: %s", file.filename)
         return result
 
-    except FileError as ex:
-
-        logger.exception(
-            f"File Validation Error: {ex}"
-        )
-
-        raise HTTPException(
-            status_code=400,
-            detail=str(ex)
-        )
-
-    except HTTPException:
+    except (FileError, HTTPException):
+        _cleanup(file_path)
         raise
 
-    except Exception as ex:
+    except Exception as exc:
+        _cleanup(file_path)
+        logger.exception("Upload failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
 
-        import traceback
 
-        traceback.print_exc()
-
-        logger.exception(
-            f"Upload failed: {ex}"
-        )
-
+def _cleanup(file_path: Path | None) -> None:
+    if file_path and file_path.exists():
         try:
-
-            if (
-                'file_path' in locals()
-                and file_path.exists()
-            ):
-                file_path.unlink()
-
+            file_path.unlink()
         except Exception:
             pass
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(ex)
-        )
-
 
 @router.post("/analyze-text")
-async def analyze_text(
-    request:
-    TextAnalysisRequest
-):
-
-    return (
-        document_service
-        .analyze_text(
-            request.content
-        )
-    )
+async def analyze_text(request: TextAnalysisRequest):
+    try:
+        return document_service.analyze_text(request.content)
+    except Exception as exc:
+        logger.exception("Text analysis failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @router.get("/supported-files")
