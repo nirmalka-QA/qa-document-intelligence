@@ -1,58 +1,25 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from api.document_routes import router as document_router
-from api.testcase_routes import router as testcase_router
-from api.rtm_routes import router as rtm_router
-from api.health_routes import router as health_router
-from services.database_service import (
-    DatabaseService
-)
-
-MAX_UPLOAD_SIZE = 200 * 1024 * 1024
-# =====================================================
-# APPLICATION CONFIGURATION
-# =====================================================
-
-APP_NAME = "QA Document Intelligence Platform"
-APP_VERSION = "1.0.0"
-
-BASE_DIR = Path(__file__).resolve().parent
-
-UPLOAD_DIR = BASE_DIR / "uploads"
-REPORT_DIR = BASE_DIR / "reports"
-LOG_DIR = BASE_DIR / "logs"
-EXPORT_DIR = BASE_DIR / "exports"
-DATABASE_DIR = BASE_DIR / "database"
-TEMPLATE_DIR = BASE_DIR / "templates"
-
-
-# =====================================================
-# CREATE REQUIRED DIRECTORIES
-# =====================================================
-
-UPLOAD_DIR.mkdir(exist_ok=True)
-
-REPORT_DIR.mkdir(exist_ok=True)
-
-LOG_DIR.mkdir(exist_ok=True)
-
-EXPORT_DIR.mkdir(exist_ok=True)
-
-DATABASE_DIR.mkdir(exist_ok=True)
-
-TEMPLATE_DIR.mkdir(exist_ok=True)
-
+from backend.api.document_routes import router as document_router
+from backend.api.testcase_routes import router as testcase_router
+from backend.api.rtm_routes import router as rtm_router
+from backend.api.health_routes import router as health_router
+from backend.config import settings
+from backend.middleware.rate_limiter import add_rate_limiting
+from backend.middleware.security import security_headers_middleware_factory
+from backend.services.database_service import DatabaseService
 
 # =====================================================
 # FASTAPI APPLICATION
 # =====================================================
 
 app = FastAPI(
-    title=APP_NAME,
-    version=APP_VERSION,
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
     description="""
 QA Document Intelligence Platform
 
@@ -70,22 +37,28 @@ Features
 - RTM Generation
 - Report Export
 """,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-
 # =====================================================
-# CORS
+# CORS - Whitelist only
 # =====================================================
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    max_age=600,
 )
+
+# =====================================================
+# SECURITY HEADERS
+# =====================================================
+
+app.middleware("http")(security_headers_middleware_factory(settings))
 
 
 # =====================================================
@@ -94,11 +67,11 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-
     return {
-        "application": APP_NAME,
-        "version": APP_VERSION,
+        "application": settings.APP_NAME,
+        "version": settings.APP_VERSION,
         "status": "running",
+        "environment": settings.ENVIRONMENT,
     }
 
 
@@ -108,11 +81,10 @@ def root():
 
 @app.get("/health")
 def health_check():
-
     return {
         "status": "healthy",
-        "application": APP_NAME,
-        "version": APP_VERSION,
+        "application": settings.APP_NAME,
+        "version": settings.APP_VERSION,
     }
 
 
@@ -122,13 +94,11 @@ def health_check():
 
 @app.get("/api/info")
 def application_info():
-
     return {
-        "name": APP_NAME,
-        "version": APP_VERSION,
-        "upload_folder": str(UPLOAD_DIR),
-        "report_folder": str(REPORT_DIR),
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
     }
+
 
 
 # =====================================================
@@ -141,9 +111,8 @@ async def startup_event():
     print("\n" + "=" * 60)
     print("QA DOCUMENT INTELLIGENCE PLATFORM")
     print("Server Started Successfully")
-    print(f"Version : {APP_VERSION}")
-    print(f"Uploads : {UPLOAD_DIR}")
-    print(f"Reports : {REPORT_DIR}")
+    print(f"Version : {settings.APP_VERSION}")
+    print(f"Uploads : {settings.UPLOAD_DIR}")
     print("=" * 60 + "\n")
 
 
@@ -188,11 +157,5 @@ async def shutdown_event():
     print("Server Shutdown")
     print("=" * 60 + "\n")
 
-@app.on_event("startup")
-async def startup_event():
+# (Database init handled in a single startup handler above)
 
-    DatabaseService()
-
-    print(
-        "Database Initialized"
-    )

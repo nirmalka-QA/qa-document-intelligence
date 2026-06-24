@@ -1,16 +1,16 @@
 from pathlib import Path
 
-from services.pdf_extractor import PDFExtractor
-from services.docx_extractor import DOCXExtractor
-from services.xlsx_analyzer import XLSXAnalyzer
-from services.pptx_analyzer import PPTXAnalyzer
+from backend.services.pdf_extractor import PDFExtractor
+from backend.services.docx_extractor import DOCXExtractor
+from backend.services.xlsx_analyzer import XLSXAnalyzer
+from backend.services.pptx_analyzer import PPTXAnalyzer
 
-from services.requirement_analyzer import RequirementAnalyzer
-from services.risk_analyzer import RiskAnalyzer
-from services.gap_analyzer import GapAnalyzer
-from services.testcase_generator import TestCaseGenerator
-from services.rtm_generator import RTMGenerator
-from services.database_service import DatabaseService
+from backend.services.requirement_analyzer import RequirementAnalyzer
+from backend.services.risk_analyzer import RiskAnalyzer
+from backend.services.gap_analyzer import GapAnalyzer
+from backend.services.testcase_generator import TestCaseGenerator
+from backend.services.rtm_generator import RTMGenerator
+from backend.services.database_service import DatabaseService
 
 
 class DocumentService:
