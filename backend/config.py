@@ -29,10 +29,13 @@ def _get_int(key: str, default: int = 0) -> int:
 
 class Settings:
     # Application
-    APP_NAME: str = _get_env("APP_NAME", "QA Document Intelligence Platform")
+    # Updated default name from "QA Document Intelligence Platform" to "Nexa QA"
+    APP_NAME: str = _get_env("APP_NAME", "Nexa QA")
     APP_VERSION: str = _get_env("APP_VERSION", "1.0.0")
     DEBUG: bool = _get_bool("DEBUG", True)
     ENVIRONMENT: str = _get_env("ENVIRONMENT", "development")
+    
+    # ... keep the rest of your config exactly the same ...
 
     # Database
     DATABASE_URL: str = _get_env("DATABASE_URL", "sqlite:///database/qa.db")

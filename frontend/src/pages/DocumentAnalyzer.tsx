@@ -1,5 +1,14 @@
-import { Grid, Stack, Title } from "@mantine/core";
+import {Grid,
+  Group,
+  Stack,
+  Text,
+  Title,
+  ThemeIcon,
+  Paper } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import {
+  IconFileAnalytics,
+} from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
 import api from "../services/api";
@@ -66,9 +75,30 @@ export default function DocumentAnalyzer() {
   return (
     <div style={{ width: "100%", padding: "12px" }}>
       <Stack>
-        <Title order={2}>QA Document Intelligence</Title>
-
-        <UploadDocument onAnalysisComplete={handleUploadComplete} />
+        {/* Premium Analyzer Header */}
+        <Paper p="xl" radius="md" withBorder shadow="sm" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))">
+          <Group justify="space-between">
+            <Group gap="md">
+              <ThemeIcon size={50} radius="md" variant="light" color="indigo">
+                <IconFileAnalytics size={28} />
+              </ThemeIcon>
+              <div>
+                <Title order={2}>Document Analyzer</Title>
+                <Text c="dimmed" mt={4}>
+                  Upload or paste your business requirements to extract actionable intelligence.
+                </Text>
+              </div>
+            </Group>
+            {/* Context Metric */}
+            <Stack gap={4} align="flex-end">
+               <Text size="xs" tt="uppercase" fw={600} c="dimmed">Status</Text>
+               <Text size="xl" fw={800} c={analysis ? "green.6" : "dimmed"}>
+                 {analysis ? "Analyzed" : "Pending"}
+               </Text>
+            </Stack>
+          </Group>
+        </Paper>
+                <UploadDocument onAnalysisComplete={handleUploadComplete} />
 
         <PasteContent onAnalyze={handleAnalyze} />
 

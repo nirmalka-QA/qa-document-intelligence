@@ -7,6 +7,7 @@ import {
   ThemeIcon,
   Badge,
   SimpleGrid,
+  Paper
 } from "@mantine/core";
 import { useAnalysisStore } from "../store/analysisStore";
 import {
@@ -16,6 +17,7 @@ import {
   IconTableShare,
   IconAlertTriangle,
   IconFileDescription,
+  IconDashboard
 } from "@tabler/icons-react";
 
 const StatCard = ({ title, value, icon: Icon, color }: any) => (
@@ -48,23 +50,33 @@ export default function Dashboard() {
   return (
     <div style={{ width: "100%", padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
       <Stack gap="xl">
-        <Group justify="space-between" align="flex-end">
-          <Stack gap="xs">
-            <Text size="sm" fw={700} c="blue" tt="uppercase" letterSpacing={1}>
-              Platform Overview
-            </Text>
-            {/* Removed hardcoded dark color so it inherits correctly */}
-            <Title order={1} style={{ fontWeight: 800 }}>
-              QA Document Intelligence
-            </Title>
-            <Text c="dimmed" size="md" mt={-4}>
-              Centralized Requirement, Test Case, and RTM Management
-            </Text>
-          </Stack>
-          <Badge size="lg" variant="dot" color={analysis ? "green" : "gray"} radius="md">
-            {analysis ? "Document Loaded" : "Awaiting Upload"}
-          </Badge>
-        </Group>
+
+        <Paper p="xl" radius="md" withBorder shadow="sm" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))">
+          <Group justify="space-between" align="center">
+            <Group gap="md">
+              <ThemeIcon size={50} radius="md" variant="light" color="blue">
+                <IconDashboard size={28} />
+              </ThemeIcon>
+              <div>
+                <Text size="sm" fw={700} c="blue" tt="uppercase" letterSpacing={1}>
+                  Platform Overview
+                </Text>
+                <Title order={2} style={{ fontWeight: 800 }}>
+                  Workspace Dashboard
+                </Title>
+                <Text c="dimmed" size="sm" mt={2}>
+                  Centralized Requirement, Test Case, and RTM Management
+                </Text>
+              </div>
+            </Group>
+            <Stack gap={4} align="flex-end">
+              <Text size="xs" tt="uppercase" fw={600} c="dimmed">System Status</Text>
+              <Badge size="lg" variant="dot" color={analysis ? "green" : "gray"} radius="md">
+                {analysis ? "Document Loaded" : "Awaiting Upload"}
+              </Badge>
+            </Stack>
+          </Group>
+        </Paper>
 
         <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
           <StatCard title="Documents" value={documentCount} icon={IconFileAnalytics} color="blue" />

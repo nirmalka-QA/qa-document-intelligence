@@ -1,6 +1,6 @@
-import { AppShell, Group, Text, ThemeIcon, ActionIcon, Tooltip } from "@mantine/core";
+import { AppShell, Group, Text, ActionIcon, Tooltip, ThemeIcon } from "@mantine/core";
 import { Outlet, useNavigate } from "react-router-dom";
-import { IconRobot, IconTrash } from "@tabler/icons-react";
+import { IconTrash, IconNfc } from "@tabler/icons-react";
 
 import WorkflowStepper from "./components/WorkflowStepper";
 import ThemeToggle from "./components/ThemeToggle";
@@ -8,14 +8,12 @@ import { useAnalysisStore } from "./store/analysisStore";
 
 export default function App() {
   const navigate = useNavigate();
-  // Pull in the active analysis and the clear method
   const { analysis, clearAll } = useAnalysisStore();
 
   const handleResetSession = () => {
-    // Confirm before wiping data
     if (window.confirm("Are you sure you want to clear the current document and all generated data? This cannot be undone.")) {
-      clearAll(); // Clears Zustand state and LocalStorage
-      navigate("/"); // Send user back to the dashboard
+      clearAll(); 
+      navigate("/"); 
     }
   };
 
@@ -37,27 +35,27 @@ export default function App() {
           }}
         >
           <Group gap="sm">
+            {/* The New "Nexa QA" Logo using an Icon */}
             <ThemeIcon 
-              size="lg" 
+              size={42} 
               radius="md" 
-              variant="gradient" 
-              gradient={{ from: 'blue', to: 'cyan' }}
+              variant="light" 
+              gradient={{ from: 'cyan', to: 'blue', deg: 135 }}
             >
-              <IconRobot size={22} />
+              <IconNfc size={28} stroke={2} />
             </ThemeIcon>
             <div>
               <Text fw={800} size="xl" style={{ letterSpacing: "-0.5px" }}>
-                QA Document Intelligence
+                Nexa QA
               </Text>
               <Text size="xs" c="dimmed" fw={600} tt="uppercase" mt={2}>
-                Requirement → Test Cases → RTM → Export
+                Intelligent QA Workspace
               </Text>
             </div>
           </Group>
 
           {/* Global Action Tools */}
           <Group gap="sm">
-            {/* Only show the reset button if there is active data to clear */}
             {analysis && (
               <Tooltip label="Clear Session Data" withArrow position="bottom">
                 <ActionIcon 

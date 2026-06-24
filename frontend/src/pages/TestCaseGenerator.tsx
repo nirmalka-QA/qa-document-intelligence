@@ -1,7 +1,7 @@
-import { Badge, Button, Card, ScrollArea, Stack, Table, Textarea, Title, Group, Text } from "@mantine/core";
+import { Badge, Button, Card, ScrollArea, Stack, Table, Textarea, Title, Group, Text, Paper,ThemeIcon } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IconSparkles, IconArrowRight } from "@tabler/icons-react";
+import { IconSparkles, IconArrowRight, IconTestPipe, IconTestPipe2Filled } from "@tabler/icons-react";
 import api from "../services/api";
 import { useAnalysisStore } from "../store/analysisStore";
 
@@ -41,12 +41,29 @@ export default function TestCaseGenerator() {
   };
 
   return (
-    <div style={{ width: "100%", padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
-      <Stack gap="xl">
-        <div>
-          <Title order={2}>Test Case Generation</Title>
-          <Text c="dimmed" mt="xs">Review extracted requirements and generate comprehensive test scenarios.</Text>
-        </div>
+    <div style={{ width: "100%", padding: "12px" }}>
+      <Stack>
+     
+        <Paper p="xl" radius="md" withBorder shadow="sm" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))">
+          <Group justify="space-between">
+            <Group gap="md">
+              <ThemeIcon size={50} radius="md" variant="light" color="teal">
+                <IconTestPipe2Filled size={28} />
+              </ThemeIcon>
+              <div>
+                <Title order={2}>Test Case Generation</Title>
+                <Text c="dimmed" mt={4}>
+                  Review extracted requirements and generate comprehensive test scenarios.
+                </Text>
+              </div>
+            </Group>
+            {/* Metric showing available requirements to process */}
+            <Stack gap={4} align="flex-end">
+              <Text size="xs" tt="uppercase" fw={600} c="dimmed">Extracted Requirements</Text>
+              <Text size="xl" fw={800}>{useAnalysisStore.getState().analysis?.requirements?.length || 0}</Text>
+            </Stack>
+          </Group>
+        </Paper>
 
         <Card withBorder radius="md" p="md" shadow="sm">
           <Textarea

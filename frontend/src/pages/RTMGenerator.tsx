@@ -35,12 +35,13 @@ export default function RTMGenerator() {
   };
 
   return (
-    <Container size="xl" py="xl">
+  
+      <div style={{ width: "100%", padding: "12px" }}>
       <Stack gap="xl">
         <Paper p="xl" radius="md" withBorder shadow="sm" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))">
           <Group justify="space-between">
             <Group gap="md">
-              <ThemeIcon size={50} radius="md" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
+              <ThemeIcon size={50} radius="md" variant="light" gradient={{ from: 'blue', to: 'cyan' }}>
                 <IconShieldCheck size={28} />
               </ThemeIcon>
               <div>
@@ -139,6 +140,6 @@ export default function RTMGenerator() {
           )}
         </Card>
       </Stack>
-    </Container>
+</div>
   );
 }
