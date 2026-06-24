@@ -1,43 +1,48 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { AnalysisResponse } from "../types/analysis";
-import type { TestCase } from "../types/testcase";
-import type { RTM } from "../types/rtm";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-interface AnalysisStore {
-  analysis: AnalysisResponse | null;
+interface AnalysisState {
+  analysis: any | null;
   requirementsText: string;
-  testCases: TestCase[];
-  rtm: RTM[];
-
-  setAnalysis: (data: AnalysisResponse) => void;
-  setRequirementsText: (value: string) => void;
-  setTestCases: (data: TestCase[]) => void;
-  setRTM: (data: RTM[]) => void;
+  testCases: any[];
+  rtm: any[];
+  setAnalysis: (data: any) => void;
+  setRequirementsText: (text: string) => void;
+  setTestCases: (testCases: any[]) => void;
+  setRTM: (rtm: any[]) => void;
   clearAll: () => void;
 }
 
-export const useAnalysisStore = create<AnalysisStore>()(
+export const useAnalysisStore = create<AnalysisState>()(
   persist(
     (set) => ({
       analysis: null,
       requirementsText: "",
       testCases: [],
       rtm: [],
+      setAnalysis: (data) => {
+        // Unpack the JSON objects into a cleanly formatted string for the Test Case Textarea
+        const parsedReqs = data.requirements?.map((req: any) => {
+            if (typeof req === 'object' && req !== null) {
+                return `[${req.requirement_id}] ${req.type}: ${req.description}`;
+            }
+            return String(req);
+        }).join("\n\n") || "";
 
-      setAnalysis: (data) => set({ analysis: data }),
-      setRequirementsText: (value) => set({ requirementsText: value }),
-      setTestCases: (data) => set({ testCases: data }),
-      setRTM: (data) => set({ rtm: data }),
-
-      clearAll: () =>
-        set({
-          analysis: null,
-          requirementsText: "",
-          testCases: [],
-          rtm: [],
-        }),
+        set({ 
+            analysis: data, 
+            requirementsText: parsedReqs,
+            testCases: [], // Reset downstream steps on new document
+            rtm: [] 
+        });
+      },
+      setRequirementsText: (text) => set({ requirementsText: text }),
+      setTestCases: (testCases) => set({ testCases }),
+      setRTM: (rtm) => set({ rtm }),
+      clearAll: () => set({ analysis: null, requirementsText: "", testCases: [], rtm: [] })
     }),
-    { name: "qa-analysis-store" }
+    {
+      name: 'qa-analysis-storage',
+    }
   )
 );

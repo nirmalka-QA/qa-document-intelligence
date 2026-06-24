@@ -16,12 +16,16 @@ from backend.services.database_service import DatabaseService
 class DocumentService:
 
     def __init__(self):
+        # Initialize our AI-powered analyzers
         self.requirement_analyzer = RequirementAnalyzer()
-        self.risk_analyzer = RiskAnalyzer()
-        self.gap_analyzer = GapAnalyzer()
         self.testcase_generator = TestCaseGenerator()
         self.rtm_generator = RTMGenerator()
         self.database_service = DatabaseService()
+        
+        # Note: We keep these for legacy fallback, but the new AI Requirement Analyzer
+        # now handles Risks and Gaps natively in one single pass!
+        self.risk_analyzer = RiskAnalyzer()
+        self.gap_analyzer = GapAnalyzer()
 
     # =========================================================
     # FILE UPLOAD ANALYSIS
@@ -47,7 +51,6 @@ class DocumentService:
             raise ValueError(f"Unsupported file type: {extension}")
 
         extracted_content = extractors[extension]().extract(file_path)
-
         display_name = original_filename or path.name
 
         return self._process_content(
@@ -80,12 +83,20 @@ class DocumentService:
         document_type: str,
         file_size: int,
     ):
-        requirements = self.requirement_analyzer.extract_requirements(content)
-        risks = self.risk_analyzer.analyze(content)
-        gaps = self.gap_analyzer.analyze(content)
+        # 1. Single pass AI Extraction (Gets Reqs, Risks, and Gaps at the same time!)
+        analysis_results = self.requirement_analyzer.analyze_text(content)
+        
+        requirements = analysis_results.get("requirements", [])
+        risks = analysis_results.get("risks", [])
+        gaps = analysis_results.get("gaps", [])
+
+        # 2. AI Test Case Generation
         testcases = self.testcase_generator.generate(requirements)
+        
+        # 3. RTM Mapping
         rtm = self.rtm_generator.generate(requirements, testcases)
 
+        # 4. Save to Database
         document_id = self.database_service.save_document(
             document_name, document_type, file_size
         )

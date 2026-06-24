@@ -236,7 +236,6 @@ class DatabaseService:
         doc_id = cursor.lastrowid
         conn.close()
         return doc_id
-
     # =========================================================
     # SAVE REQUIREMENTS
     # =========================================================
@@ -244,14 +243,26 @@ class DatabaseService:
     def save_requirements(self, document_id: int, requirements: list) -> None:
         conn = self.get_connection()
         cursor = conn.cursor()
-        for index, req_text in enumerate(requirements, start=1):
+        for index, req in enumerate(requirements, start=1):
+            
+            # Unpack the AI dictionary properly
+            if isinstance(req, dict):
+                req_id = req.get("requirement_id", f"REQ-{index:03}")
+                req_text = req.get("description", str(req))
+                category = req.get("type", "Functional")
+            else:
+                # Fallback if it's just a regular string
+                req_id = f"REQ-{index:03}"
+                req_text = str(req)
+                category = "Functional"
+
             cursor.execute(
                 """
                 INSERT OR IGNORE INTO requirements
-                    (document_id, requirement_id, requirement_text, is_active)
-                VALUES (?, ?, ?, 1)
+                    (document_id, requirement_id, requirement_text, category, is_active)
+                VALUES (?, ?, ?, ?, 1)
                 """,
-                (document_id, f"REQ-{index:03}", req_text),
+                (document_id, req_id, req_text, category),
             )
         conn.commit()
         conn.close()
@@ -300,6 +311,19 @@ class DatabaseService:
         conn = self.get_connection()
         cursor = conn.cursor()
         for tc in testcases:
+            
+            # Safety: Ensure linked_requirements is a comma-separated string, not a list
+            linked_reqs = tc.get("linked_requirements", [])
+            if isinstance(linked_reqs, list):
+                req_id_str = ", ".join(str(r) for r in linked_reqs)
+            else:
+                req_id_str = str(linked_reqs)
+
+            # Safety: Ensure test_steps is a string, not a list
+            t_steps = tc.get("test_steps", "")
+            if isinstance(t_steps, list):
+                t_steps = "\n".join(str(s) for s in t_steps)
+
             cursor.execute(
                 """
                 INSERT OR IGNORE INTO test_cases (
@@ -311,17 +335,17 @@ class DatabaseService:
                 """,
                 (
                     document_id,
-                    tc.get("testcase_id", ""),
-                    tc.get("test_title", ""),
-                    tc.get("pre_requisites", ""),
-                    tc.get("test_data", ""),
-                    tc.get("expected_result", ""),
-                    tc.get("actual_result", ""),
-                    tc.get("priority", "Medium"),
-                    tc.get("overall_status", "Not Executed"),
-                    tc.get("comments", ""),
-                    tc.get("requirement_id", ""),
-                    tc.get("release_sprint", ""),
+                    str(tc.get("testcase_id", "")),
+                    str(tc.get("test_title", "")),
+                    str(tc.get("pre_requisites", "")),
+                    str(tc.get("test_data", "")),
+                    str(tc.get("expected_result", "")),
+                    str(tc.get("actual_result", "")),
+                    str(tc.get("priority", "Medium")),
+                    str(tc.get("overall_status", "Not Executed")),
+                    str(tc.get("comments", "")),
+                    req_id_str, # Safely stringified
+                    str(tc.get("release_sprint", "")),
                 ),
             )
             tc_db_id = cursor.lastrowid
@@ -336,10 +360,10 @@ class DatabaseService:
                     (
                         tc_db_id,
                         tc.get("test_step_number", 1),
-                        tc.get("test_steps", ""),
-                        tc.get("expected_result", ""),
-                        tc.get("actual_result", ""),
-                        tc.get("test_step_status", "Not Executed"),
+                        t_steps,
+                        str(tc.get("expected_result", "")),
+                        str(tc.get("actual_result", "")),
+                        str(tc.get("test_step_status", "Not Executed")),
                     ),
                 )
         conn.commit()

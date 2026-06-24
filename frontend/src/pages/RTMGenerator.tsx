@@ -45,7 +45,7 @@ export default function RTMGenerator() {
                 <IconShieldCheck size={28} />
               </ThemeIcon>
               <div>
-                <Title order={2}>Requirement Traceability</Title>
+                <Title order={2}>Requirement Traceability Matrix</Title>
                 <Text c="dimmed" mt={4}>
                   Map generated test cases against core business requirements to ensure full coverage.
                 </Text>

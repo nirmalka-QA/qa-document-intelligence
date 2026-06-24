@@ -1,58 +1,40 @@
 class RTMGenerator:
+    def generate(self, requirements: list, testcases: list):
+        """
+        Maps generated test cases back to original requirements.
+        """
+        rtm_matrix = []
+        
+        for req in requirements:
+            # Handle both string requirements and JSON object requirements
+            if isinstance(req, dict):
+                req_id = req.get("requirement_id", "UNKNOWN")
+                req_desc = req.get("description", str(req))
+            else:
+                req_id = "UNKNOWN"
+                req_desc = str(req)
 
-    def generate(
-        self,
-        requirements,
-        testcases
-    ):
+            # Find all test cases where this req_id exists in their linked_requirements array
+            linked_tests = []
+            for tc in testcases:
+                linked_reqs = tc.get("linked_requirements", [])
+                if req_id in linked_reqs or req_desc in linked_reqs:
+                    linked_tests.append(tc.get("testcase_id", "TC-XXX"))
 
-        rtm_rows = []
+            # Determine Coverage Status
+            if len(linked_tests) == 0:
+                status = "Missing Coverage"
+                coverage_type = "0 Tests"
+            else:
+                status = "Covered"
+                coverage_type = f"{len(linked_tests)} Tests"
 
-        for index, req in enumerate(
-            requirements,
-            start=1
-        ):
-
-            req_id = (
-                f"REQ-{index:03}"
-            )
-
-            related_tc = [
-
-                tc
-                for tc in testcases
-                if tc.get(
-                    "requirement_id"
-                ) == req_id
-
-            ]
-
-            testcase_ids = ",".join(
-
-                [
-                    tc["testcase_id"]
-                    for tc
-                    in related_tc
-                ]
-
-            )
-
-            rtm_rows.append({
-
-                "requirement_id":
-                    req_id,
-
-                "requirement":
-                    req,
-
-                "testcase_ids":
-                    testcase_ids,
-
-                "coverage":
-                    "Covered",
-
-                "status":
-                    "Mapped"
+            rtm_matrix.append({
+                "requirement_id": req_id,
+                "requirement": req_desc,
+                "testcase_ids": ", ".join(linked_tests) if linked_tests else "None",
+                "coverage": coverage_type,
+                "status": status
             })
 
-        return rtm_rows
+        return {"rtm": rtm_matrix}

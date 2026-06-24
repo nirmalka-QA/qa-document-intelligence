@@ -1,17 +1,11 @@
 import axios from "axios";
 
+// Strictly pointing to the local FastAPI server
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000",
-  timeout: 120000,
+  baseURL: "http://127.0.0.1:8000", 
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
-
-// Global response error interceptor — log to console, not alert
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("[API Error]", error?.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
 
 export default api;

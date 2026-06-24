@@ -18,7 +18,7 @@ export default function App() {
   };
 
   return (
-    <AppShell padding={0}>
+    <AppShell padding={1}>
       <AppShell.Main>
         <Group
           justify="space-between"
@@ -32,20 +32,20 @@ export default function App() {
             zIndex: 101,
           }}
         >
-          <Group gap="md">
+          <Group gap="sm">
             <ThemeIcon 
-              size={50} 
+              size={42} 
               radius="md" 
               variant="outline" 
               gradient={{ from: 'cyan', to: 'blue', deg: 135 }}
             >
-              <IconNfc size={80} stroke={2} />
+              <IconNfc size={60} stroke={2} />
             </ThemeIcon>
             <div>
-              <Text fw={800} size="xl" style={{ letterSpacing: "-0.5px" }}>
+              <Text fw={800} size="xl" style={{ letterSpacing: "-0.3px" }}>
                 Nexus
               </Text>
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase" mt={2}>
+              <Text size="xs" c="dimmed" fw={600} tt="uppercase" mt={1}>
                 Intelligent QA Workspace
               </Text>
             </div>
