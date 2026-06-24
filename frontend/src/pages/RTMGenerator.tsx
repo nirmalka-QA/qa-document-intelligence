@@ -1,17 +1,4 @@
-import {
-  Badge,
-  Button,
-  Card,
-  Container,
-  Group,
-  Paper,
-  ScrollArea,
-  Stack,
-  Table,
-  Text,
-  Title,
-  ThemeIcon,
-} from "@mantine/core";
+import { Badge, Button, Card, Container, Group, Paper, ScrollArea, Stack, Table, Text, Title, ThemeIcon } from "@mantine/core";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconTableExport, IconArrowRight, IconShieldCheck } from "@tabler/icons-react";
@@ -50,14 +37,14 @@ export default function RTMGenerator() {
   return (
     <Container size="xl" py="xl">
       <Stack gap="xl">
-        <Paper p="xl" radius="md" withBorder shadow="sm" bg="gray.0">
+        <Paper p="xl" radius="md" withBorder shadow="sm" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))">
           <Group justify="space-between">
             <Group gap="md">
               <ThemeIcon size={50} radius="md" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
                 <IconShieldCheck size={28} />
               </ThemeIcon>
               <div>
-                <Title order={2} c="dark.9">Requirement Traceability</Title>
+                <Title order={2}>Requirement Traceability</Title>
                 <Text c="dimmed" mt={4}>
                   Map generated test cases against core business requirements to ensure full coverage.
                 </Text>
@@ -71,7 +58,7 @@ export default function RTMGenerator() {
         </Paper>
 
         <Card withBorder shadow="sm" radius="md" p={0}>
-          <Group justify="space-between" p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+          <Group justify="space-between" p="md" style={{ borderBottom: '1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5))' }}>
             <Group gap="sm">
               <Text fw={600} size="lg">Coverage Matrix</Text>
               {rtm.length > 0 && (
@@ -85,6 +72,8 @@ export default function RTMGenerator() {
               onClick={generateRTM}
               leftSection={<IconTableExport size={18} />}
               radius="md"
+              // Disabled if there are no testcases or no requirements loaded
+              disabled={testCases.length === 0 || !analysis?.requirements || analysis.requirements.length === 0}
             >
               Generate RTM Matrix
             </Button>
@@ -92,7 +81,7 @@ export default function RTMGenerator() {
 
           <ScrollArea h={600} offsetScrollbars>
             <Table horizontalSpacing="lg" verticalSpacing="md" highlightOnHover striped>
-              <Table.Thead bg="gray.0">
+              <Table.Thead bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))">
                 <Table.Tr>
                   <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Req ID</Text></Table.Th>
                   <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Requirement Description</Text></Table.Th>
@@ -105,7 +94,7 @@ export default function RTMGenerator() {
                 {rtm.length > 0 ? (
                   rtm.map((row, index) => (
                     <Table.Tr key={index}>
-                      <Table.Td fw={600} c="dark.7">{row.requirement_id}</Table.Td>
+                      <Table.Td fw={600}>{row.requirement_id}</Table.Td>
                       <Table.Td maw={300}><Text truncate="end" size="sm" c="dimmed">{row.requirement}</Text></Table.Td>
                       <Table.Td>
                         <Text size="sm" fw={500} style={{ fontFamily: 'monospace' }}>
@@ -137,7 +126,7 @@ export default function RTMGenerator() {
           </ScrollArea>
           
           {rtm.length > 0 && (
-            <Group justify="flex-end" p="md" bg="gray.0" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group justify="flex-end" p="md" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))" style={{ borderTop: '1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5))' }}>
               <Button
                 color="green"
                 rightSection={<IconArrowRight size={16} />}

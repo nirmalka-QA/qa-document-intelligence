@@ -1,20 +1,32 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { MantineProvider } from '@mantine/core';
-import '@mantine/core/styles.css'; 
-import './styles/globals.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
 
-// Import the global theme
-import { theme } from './theme/mantineTheme'; 
+// 1. Mantine Core Styles
+import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 
-// Import your router setup (assuming you have a router file that renders <App />)
-// If your router is defined here, wrap your RouterProvider inside MantineProvider
-import { RouterProvider } from 'react-router-dom';
-import router from './router'; 
+import { MantineProvider, ColorSchemeScript } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
+import { RouterProvider } from "react-router-dom";
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+// 2. Local Imports
+import { router } from "./router";
+import { theme } from "./theme/mantineTheme";
+
+// 3. Global CSS
+import "./index.css"; 
+import "./styles/globals.css";
+
+// Check local storage for the user's previous theme preference
+const savedTheme = localStorage.getItem("qa-theme") === "dark" ? "dark" : "light";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="auto">
+    {/* ColorSchemeScript MUST be here so the app knows the theme BEFORE it renders */}
+    <ColorSchemeScript defaultColorScheme={savedTheme} />
+    
+    <MantineProvider theme={theme} defaultColorScheme={savedTheme}>
+      <Notifications position="top-right" />
       <RouterProvider router={router} />
     </MantineProvider>
   </React.StrictMode>

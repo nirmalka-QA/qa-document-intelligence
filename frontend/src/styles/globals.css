@@ -1,34 +1,35 @@
+/* 1. Base Variables & Safety Net */
 :root {
-  --mantine-font-family:
-    "JetBrains Mono",
-    monospace;
+  /* Your Custom Font */
+  --mantine-font-family: "JetBrains Mono", monospace;
+  
+  /* CRITICAL: Fallback colors before Mantine's script kicks in */
+  --app-bg: #f8f9fa; /* Light gray fallback */
+  --app-text: #212529; /* Dark text fallback */
 }
 
-body {
-  margin: 0;
-}
-
+/* 2. Base Resets */
 * {
   box-sizing: border-box;
 }
 
-/* src/styles/globals.css */
-
-/* This targets the root HTML tag based on the active Mantine color scheme */
+/* 3. Light Mode Theme Variables */
 :root[data-mantine-color-scheme="light"] {
   --app-bg: var(--mantine-color-gray-0);
   --app-text: var(--mantine-color-dark-9);
 }
 
+/* 4. Dark Mode Theme Variables */
 :root[data-mantine-color-scheme="dark"] {
-  --app-bg: var(--mantine-color-dark-9); /* Deep dark background */
-  --app-text: var(--mantine-color-gray-3); /* Soft white text */
+  --app-bg: var(--mantine-color-dark-9);
+  --app-text: var(--mantine-color-gray-3);
 }
 
-/* Apply it globally */
+/* 5. Global Application Styles */
 body {
   background-color: var(--app-bg) !important;
   color: var(--app-text) !important;
   margin: 0;
   padding: 0;
+  min-height: 100vh;
 }

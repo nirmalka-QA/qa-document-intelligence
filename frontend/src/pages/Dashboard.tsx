@@ -18,14 +18,8 @@ import {
   IconFileDescription,
 } from "@tabler/icons-react";
 
-// Reusable micro-component for Premium Stat Cards
 const StatCard = ({ title, value, icon: Icon, color }: any) => (
-  <Card 
-    withBorder 
-    radius="md" 
-    padding="xl" 
-    shadow="xs"
-  >
+  <Card withBorder radius="md" padding="xl" shadow="xs">
     <Group justify="space-between" align="flex-start">
       <Stack gap="xs">
         <Text size="sm" c="dimmed" fw={600} tt="uppercase">
@@ -54,31 +48,24 @@ export default function Dashboard() {
   return (
     <div style={{ width: "100%", padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
       <Stack gap="xl">
-        
-        {/* Premium Header Section */}
         <Group justify="space-between" align="flex-end">
           <Stack gap="xs">
             <Text size="sm" fw={700} c="blue" tt="uppercase" letterSpacing={1}>
               Platform Overview
             </Text>
-            <Title order={1} style={{ fontWeight: 800, color: "var(--mantine-color-dark-9)" }}>
+            {/* Removed hardcoded dark color so it inherits correctly */}
+            <Title order={1} style={{ fontWeight: 800 }}>
               QA Document Intelligence
             </Title>
             <Text c="dimmed" size="md" mt={-4}>
               Centralized Requirement, Test Case, and RTM Management
             </Text>
           </Stack>
-          <Badge 
-            size="lg" 
-            variant="dot" 
-            color={analysis ? "green" : "gray"}
-            radius="md"
-          >
+          <Badge size="lg" variant="dot" color={analysis ? "green" : "gray"} radius="md">
             {analysis ? "Document Loaded" : "Awaiting Upload"}
           </Badge>
         </Group>
 
-        {/* Primary Metrics */}
         <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
           <StatCard title="Documents" value={documentCount} icon={IconFileAnalytics} color="blue" />
           <StatCard title="Requirements" value={requirementCount} icon={IconListCheck} color="grape" />
@@ -86,7 +73,6 @@ export default function Dashboard() {
           <StatCard title="RTMs" value={rtmCount} icon={IconTableShare} color="orange" />
         </SimpleGrid>
 
-        {/* Secondary Detailed Cards */}
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
           <Card withBorder radius="md" padding="xl" shadow="xs">
             <Group justify="space-between" align="center">
@@ -114,15 +100,20 @@ export default function Dashboard() {
                 </Group>
                 <Text size="sm" c="dimmed">Currently analyzing workspace.</Text>
               </Stack>
-              <Card bg="gray.0" radius="sm" mt="md" p="md">
-                <Text fw={600} size="md" c={analysis?.document_name ? "dark" : "dimmed"}>
+              {/* Used light-dark() to make background adapt automatically */}
+              <Card 
+                bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))" 
+                radius="sm" 
+                mt="md" 
+                p="md"
+              >
+                <Text fw={600} size="md" c={analysis?.document_name ? undefined : "dimmed"}>
                   {analysis?.document_name || "No Document Uploaded"}
                 </Text>
               </Card>
             </Stack>
           </Card>
         </SimpleGrid>
-
       </Stack>
     </div>
   );

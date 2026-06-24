@@ -1,15 +1,4 @@
-import {
-  Badge,
-  Button,
-  Card,
-  ScrollArea,
-  Stack,
-  Table,
-  Textarea,
-  Title,
-  Group,
-  Text,
-} from "@mantine/core";
+import { Badge, Button, Card, ScrollArea, Stack, Table, Textarea, Title, Group, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconSparkles, IconArrowRight } from "@tabler/icons-react";
@@ -33,9 +22,7 @@ export default function TestCaseGenerator() {
     }
     try {
       setLoading(true);
-      const response = await api.post("/api/documents/analyze-text", {
-        content: requirement,
-      });
+      const response = await api.post("/api/documents/analyze-text", { content: requirement });
       setTestCases(response.data?.testcases || []);
     } catch (error) {
       console.error(error);
@@ -45,7 +32,6 @@ export default function TestCaseGenerator() {
     }
   };
 
-  // Helper for premium color-coded badges
   const getPriorityColor = (priority: string) => {
     const p = priority?.toLowerCase() || "";
     if (p.includes("high")) return "red";
@@ -58,7 +44,7 @@ export default function TestCaseGenerator() {
     <div style={{ width: "100%", padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
       <Stack gap="xl">
         <div>
-          <Title order={2} c="dark.9">Test Case Generation</Title>
+          <Title order={2}>Test Case Generation</Title>
           <Text c="dimmed" mt="xs">Review extracted requirements and generate comprehensive test scenarios.</Text>
         </div>
 
@@ -71,7 +57,14 @@ export default function TestCaseGenerator() {
             autosize
             value={requirement}
             onChange={(e) => setRequirement(e.currentTarget.value)}
-            styles={{ input: { fontFamily: 'monospace', fontSize: '14px', backgroundColor: 'var(--mantine-color-gray-0)' } }}
+            styles={{ 
+              input: { 
+                fontFamily: 'monospace', 
+                fontSize: '14px',
+                backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
+                color: 'light-dark(var(--mantine-color-black), var(--mantine-color-gray-3))',
+              } 
+            }}
           />
           <Group justify="flex-end" mt="md">
             <Button
@@ -79,6 +72,7 @@ export default function TestCaseGenerator() {
               onClick={generateCases}
               leftSection={<IconSparkles size={18} />}
               radius="md"
+              disabled={!requirement || requirement.trim() === ""} // Disabled if no requirement
             >
               Generate Scenarios
             </Button>
@@ -87,7 +81,7 @@ export default function TestCaseGenerator() {
 
         {testCases.length > 0 && (
           <Card withBorder radius="md" p={0} shadow="sm">
-            <Group justify="space-between" p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group justify="space-between" p="md" style={{ borderBottom: '1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5))' }}>
               <Group gap="sm">
                 <Text fw={600} size="lg">Generated Scenarios</Text>
                 <Badge size="md" variant="light" color="teal">
@@ -106,7 +100,7 @@ export default function TestCaseGenerator() {
 
             <ScrollArea h={500} offsetScrollbars>
               <Table horizontalSpacing="lg" verticalSpacing="md" highlightOnHover striped>
-                <Table.Thead bg="gray.0">
+                <Table.Thead bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))">
                   <Table.Tr>
                     <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Test ID</Text></Table.Th>
                     <Table.Th><Text size="xs" tt="uppercase" c="dimmed">Title</Text></Table.Th>
@@ -118,7 +112,7 @@ export default function TestCaseGenerator() {
                 <Table.Tbody>
                   {testCases.map((tc, index) => (
                     <Table.Tr key={index}>
-                      <Table.Td fw={600} c="dark.7">{tc.testcase_id}</Table.Td>
+                      <Table.Td fw={600}>{tc.testcase_id}</Table.Td>
                       <Table.Td maw={300}><Text truncate="end" size="sm">{tc.test_title}</Text></Table.Td>
                       <Table.Td><Badge variant="dot" color="gray">{tc.requirement_id}</Badge></Table.Td>
                       <Table.Td>

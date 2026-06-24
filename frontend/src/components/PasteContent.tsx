@@ -21,7 +21,8 @@ export default function PasteContent({ onAnalyze }: Props) {
       <Stack gap="md">
         <Group gap="sm">
           <IconForms color="var(--mantine-color-blue-6)" />
-          <Text fw={700} size="xl" c="dark.9">Manual Input</Text>
+          {/* Removed c="dark.9" */}
+          <Text fw={700} size="xl">Manual Input</Text>
         </Group>
 
         <Textarea
@@ -35,8 +36,10 @@ export default function PasteContent({ onAnalyze }: Props) {
             input: {
               fontFamily: 'monospace',
               fontSize: '14px',
-              backgroundColor: 'var(--mantine-color-gray-0)',
-              border: '1px solid var(--mantine-color-gray-3)'
+              // Adapted for Dark Mode
+              backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
+              color: 'light-dark(var(--mantine-color-black), var(--mantine-color-gray-3))',
+              borderColor: 'light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))'
             }
           }}
         />
@@ -48,7 +51,7 @@ export default function PasteContent({ onAnalyze }: Props) {
             leftSection={<IconWand size={18} />}
             onClick={handleAnalyze}
             loading={isAnalyzing}
-            disabled={!content.trim()}
+            disabled={!content.trim()} // Disabled if empty
           >
             Analyze Content
           </Button>

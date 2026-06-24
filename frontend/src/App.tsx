@@ -1,11 +1,24 @@
-import { AppShell, Group, Text, ThemeIcon } from "@mantine/core";
-import { Outlet } from "react-router-dom";
-import { IconRobot } from "@tabler/icons-react";
+import { AppShell, Group, Text, ThemeIcon, ActionIcon, Tooltip } from "@mantine/core";
+import { Outlet, useNavigate } from "react-router-dom";
+import { IconRobot, IconTrash } from "@tabler/icons-react";
 
 import WorkflowStepper from "./components/WorkflowStepper";
 import ThemeToggle from "./components/ThemeToggle";
+import { useAnalysisStore } from "./store/analysisStore";
 
 export default function App() {
+  const navigate = useNavigate();
+  // Pull in the active analysis and the clear method
+  const { analysis, clearAll } = useAnalysisStore();
+
+  const handleResetSession = () => {
+    // Confirm before wiping data
+    if (window.confirm("Are you sure you want to clear the current document and all generated data? This cannot be undone.")) {
+      clearAll(); // Clears Zustand state and LocalStorage
+      navigate("/"); // Send user back to the dashboard
+    }
+  };
+
   return (
     <AppShell padding={0}>
       <AppShell.Main>
@@ -42,7 +55,25 @@ export default function App() {
             </div>
           </Group>
 
-          <ThemeToggle />
+          {/* Global Action Tools */}
+          <Group gap="sm">
+            {/* Only show the reset button if there is active data to clear */}
+            {analysis && (
+              <Tooltip label="Clear Session Data" withArrow position="bottom">
+                <ActionIcon 
+                  variant="light" 
+                  color="red" 
+                  size="lg" 
+                  radius="md" 
+                  onClick={handleResetSession}
+                >
+                  <IconTrash size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            
+            <ThemeToggle />
+          </Group>
         </Group>
 
         <WorkflowStepper />
