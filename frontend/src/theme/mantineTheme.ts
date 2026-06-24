@@ -1,5 +1,5 @@
 // src/theme/mantineTheme.ts
-import { createTheme, Card, Paper, Table, Textarea, Badge } from "@mantine/core";
+import { createTheme, Card, Paper, Table, Textarea } from "@mantine/core";
 
 export const theme = createTheme({
   primaryColor: "blue",

@@ -50,7 +50,7 @@ export default function Dashboard() {
   return (
     <div style={{ width: "100%", padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
       <Stack gap="xl">
-
+{/* Premium Dashboard Header */}
         <Paper p="xl" radius="md" withBorder shadow="sm" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))">
           <Group justify="space-between" align="center">
             <Group gap="md">

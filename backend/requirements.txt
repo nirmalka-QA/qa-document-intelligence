@@ -22,6 +22,4 @@ python-pptx
 # Data processing
 pandas
 xlsxwriter
-
-# Optional: MIME type validation (install system dep libmagic first)
-# python-magic  
+openai

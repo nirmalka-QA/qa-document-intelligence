@@ -1,4 +1,4 @@
-import { Badge, Button, Card, ScrollArea, Stack, Table, Textarea, Title, Group, Text, Paper,ThemeIcon } from "@mantine/core";
+import { Badge, Button, Card, ScrollArea, Stack, Table, Textarea, Title, Group, Text, Paper, ThemeIcon } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconSparkles, IconArrowRight, IconTestPipe, IconTestPipe2Filled } from "@tabler/icons-react";
@@ -22,7 +22,10 @@ export default function TestCaseGenerator() {
     }
     try {
       setLoading(true);
-      const response = await api.post("/api/documents/analyze-text", { content: requirement });
+      // NEW
+      const response = await api.post("/api/testcases/generate", {
+        requirements: requirement,
+      });
       setTestCases(response.data?.testcases || []);
     } catch (error) {
       console.error(error);
@@ -43,7 +46,7 @@ export default function TestCaseGenerator() {
   return (
     <div style={{ width: "100%", padding: "12px" }}>
       <Stack>
-     
+
         <Paper p="xl" radius="md" withBorder shadow="sm" bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))">
           <Group justify="space-between">
             <Group gap="md">
@@ -74,13 +77,13 @@ export default function TestCaseGenerator() {
             autosize
             value={requirement}
             onChange={(e) => setRequirement(e.currentTarget.value)}
-            styles={{ 
-              input: { 
-                fontFamily: 'monospace', 
+            styles={{
+              input: {
+                fontFamily: 'monospace',
                 fontSize: '14px',
                 backgroundColor: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))',
                 color: 'light-dark(var(--mantine-color-black), var(--mantine-color-gray-3))',
-              } 
+              }
             }}
           />
           <Group justify="flex-end" mt="md">

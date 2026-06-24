@@ -1,6 +1,6 @@
 import { AppShell, Group, Text, ActionIcon, Tooltip, ThemeIcon } from "@mantine/core";
 import { Outlet, useNavigate } from "react-router-dom";
-import { IconTrash, IconNfc } from "@tabler/icons-react";
+import { IconTrash, IconNfc} from "@tabler/icons-react";
 
 import WorkflowStepper from "./components/WorkflowStepper";
 import ThemeToggle from "./components/ThemeToggle";
@@ -20,8 +20,6 @@ export default function App() {
   return (
     <AppShell padding={0}>
       <AppShell.Main>
-        
-        {/* Premium Header Layout */}
         <Group
           justify="space-between"
           align="center"
@@ -34,27 +32,24 @@ export default function App() {
             zIndex: 101,
           }}
         >
-          <Group gap="sm">
-            {/* The New "Nexa QA" Logo using an Icon */}
+          <Group gap="md">
             <ThemeIcon 
-              size={42} 
+              size={50} 
               radius="md" 
-              variant="light" 
+              variant="outline" 
               gradient={{ from: 'cyan', to: 'blue', deg: 135 }}
             >
-              <IconNfc size={28} stroke={2} />
+              <IconNfc size={80} stroke={2} />
             </ThemeIcon>
             <div>
               <Text fw={800} size="xl" style={{ letterSpacing: "-0.5px" }}>
-                Nexa QA
+                Nexus
               </Text>
               <Text size="xs" c="dimmed" fw={600} tt="uppercase" mt={2}>
                 Intelligent QA Workspace
               </Text>
             </div>
           </Group>
-
-          {/* Global Action Tools */}
           <Group gap="sm">
             {analysis && (
               <Tooltip label="Clear Session Data" withArrow position="bottom">
